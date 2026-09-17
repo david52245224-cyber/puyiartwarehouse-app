@@ -331,8 +331,13 @@
               </button>
             </div>
             <pre id="scriptCodeBlock" class="p-4 bg-slate-900 text-slate-100 rounded-b-xl overflow-x-auto text-[11px] font-mono leading-normal custom-scrollbar max-h-56">
-function doGet() {
+function doGet(e) {
   try {
+    // 支援 GitHub Pages 跨網域 GET 動作請求（打 V、改時間）
+    if (e && e.parameter && e.parameter.action) {
+      return handleAction(e.parameter);
+    }
+
     var scriptStartTime = new Date().getTime();
     var now = new Date();
     now.setHours(0, 0, 0, 0); 
@@ -404,7 +409,6 @@ function doGet() {
       var item = allEvents[k];
       if (item.isReturning) continue;
 
-      // 檢查執行時間，若超過 15 秒及時中斷搜尋直接回傳，防止 Web App 30秒超時報錯
       if (new Date().getTime() - scriptStartTime > 15000) {
         break;
       }
@@ -454,7 +458,6 @@ function doGet() {
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (outerErr) {
-    // 確保即使任何錯誤也回傳標準 JSON，絕不丟出 HTML 錯誤網頁
     return ContentService.createTextOutput(JSON.stringify({ 
       status: "error", 
       message: outerErr.toString(),
@@ -465,7 +468,21 @@ function doGet() {
 
 function doPost(e) {
   try {
-    var payload = JSON.parse(e.postData.contents);
+    var payload = {};
+    if (e && e.postData && e.postData.contents) {
+      try { payload = JSON.parse(e.postData.contents); } catch(ex) { payload = e.parameter || {}; }
+    } else if (e && e.parameter) {
+      payload = e.parameter;
+    }
+    return handleAction(payload);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleAction(payload) {
+  try {
     var action = payload.action;
     var calendarId = payload.calendarId || "primary";
     var eventId = payload.eventId;
@@ -486,7 +503,8 @@ function doPost(e) {
                                .replace(/\)\s*\d+$/, ")")
                                .trim();
         var people = payload.people || 1;
-        newTitle = (payload.confirmed ? "V" : "") + base + people;
+        var isConfirmed = String(payload.confirmed) === "true";
+        newTitle = (isConfirmed ? "V" : "") + base + people;
       }
       event.setTitle(newTitle);
       return ContentService.createTextOutput(JSON.stringify({ status: "success", newTitle: newTitle }))
@@ -497,7 +515,7 @@ function doPost(e) {
       var newStart = new Date(payload.newStartTime);
       var newEnd = new Date(payload.newEndTime);
       event.setTime(newStart, newEnd);
-      if (payload.note && payload.note.trim() !== "") {
+      if (payload.note && String(payload.note).trim() !== "") {
         var prevDesc = event.getDescription() || "";
         event.setDescription(prevDesc + "\n[改期備註 " + Utilities.formatDate(new Date(), "GMT+8", "MM/dd HH:mm") + "] " + payload.note);
       }
@@ -507,8 +525,8 @@ function doPost(e) {
     
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "未知操作" }))
       .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+  } catch(actionErr) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: actionErr.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -1002,6 +1020,44 @@ function doPost(e) {
         showToast(`預約人數已調整為 ${current} 人`);
       };
 
+      // GitHub Pages 專用雙通道通信機制（POST 遭遇跨域重導向失敗時，自動無縫切換 GET）
+      const sendGasAction = async (payload) => {
+        if (!state.gasUrl) throw new Error('尚未設定 Apps Script 網址');
+
+        // 嘗試方式 1: POST
+        try {
+          const res = await fetch(state.gasUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          });
+          const rawText = await res.text();
+          let json;
+          try {
+            json = JSON.parse(rawText);
+            return json;
+          } catch(pe) {
+            console.warn('POST 回傳非 JSON，準備啟動 GET 備用通道...');
+          }
+        } catch (postErr) {
+          console.warn('GitHub Pages 觸發 CORS POST 阻擋，自動無縫切換至 GET 備用通道：', postErr);
+        }
+
+        // 嘗試方式 2: GET 備用通道 (GitHub Pages 100% 相容且不被 CORS 阻擋)
+        const queryParams = new URLSearchParams();
+        for (const k in payload) {
+          if (payload[k] !== undefined && payload[k] !== null) {
+            queryParams.append(k, String(payload[k]));
+          }
+        }
+        queryParams.append('_t', String(Date.now()));
+
+        const getUrl = state.gasUrl + (state.gasUrl.includes('?') ? '&' : '?') + queryParams.toString();
+        const resGet = await fetch(getUrl);
+        const textGet = await resGet.text();
+        return JSON.parse(textGet);
+      };
+
       // Toggle Confirm V State
       window.toggleConfirmEvent = async (id) => {
         const evt = state.events.find(e => e.id === id);
@@ -1036,22 +1092,16 @@ function doPost(e) {
             people: info.people
           };
 
-          const res = await fetch(state.gasUrl, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-          });
-
-          const result = await res.json();
-          if (result.status === 'success') {
+          const result = await sendGasAction(payload);
+          if (result && result.status === 'success') {
             evt.title = result.newTitle || newTargetTitle;
             showToast(willConfirm ? `預約已打 V：${evt.title}` : `已取消 V：${evt.title}`);
             renderUI();
           } else {
-            showToast(result.message || '更新失敗', true);
+            showToast((result && result.message) || '更新失敗', true);
           }
         } catch (err) {
-          console.error(err);
+          console.error('日曆更新失敗：', err);
           evt.title = newTargetTitle;
           renderUI();
           showToast('已在本機更新（請更新 Apps Script 為新版本）');
@@ -1313,23 +1363,17 @@ ${maskedPhone}
               note: noteVal
             };
 
-            const res = await fetch(state.gasUrl, {
-              method: 'POST',
-              body: JSON.stringify(payload),
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-
-            const result = await res.json();
-            if (result.status === 'success') {
+            const result = await sendGasAction(payload);
+            if (result && result.status === 'success') {
               evt.start = newStart.toISOString();
               evt.end = newEnd.toISOString();
               renderUI();
               showToast('時間已成功更新並同步至日曆！');
             } else {
-              showToast(result.message || '更新時間失敗', true);
+              showToast((result && result.message) || '更新時間失敗', true);
             }
           } catch (err) {
-            console.error(err);
+            console.error('更新時間出錯：', err);
             evt.start = newStart.toISOString();
             evt.end = newEnd.toISOString();
             renderUI();
