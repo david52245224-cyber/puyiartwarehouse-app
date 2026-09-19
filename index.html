@@ -29,6 +29,7 @@
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         <div class="flex items-center gap-3.5">
           <div class="w-11 h-11 rounded-2xl bg-[#2b72b8] flex items-center justify-center text-white shadow-md shadow-[#2b72b8]/20 shrink-0">
+            <!-- SVG Building Icon -->
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
@@ -50,6 +51,7 @@
             class="px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-2 shadow-2xs active:scale-95 cursor-pointer"
             title="重新讀取 Google 日曆"
           >
+            <!-- SVG Refresh Icon -->
             <svg id="refreshIcon" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
@@ -61,6 +63,7 @@
             class="px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl bg-[#2b72b8] hover:bg-[#235e98] text-white transition flex items-center gap-2 shadow-md shadow-[#2b72b8]/25 active:scale-95 cursor-pointer"
             title="Google 日曆 Apps Script 設定"
           >
+            <!-- SVG Cog Icon -->
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -324,18 +327,32 @@
 
           <div class="relative">
             <div class="flex items-center justify-between bg-slate-800 text-slate-200 px-4 py-2 rounded-t-xl text-[11px] font-mono">
-              <span>Code.gs 完整代碼 (支援老客人全歷史判定、V格式與行程刪除)</span>
+              <span>Code.gs 完整代碼 (支援老客人全歷史判定、V格式、雙通道與行程刪除)</span>
               <button id="btnCopyScript" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-md text-[11px] flex items-center gap-1 text-white cursor-pointer">
                 <span id="copyScriptText">複製後台代碼</span>
               </button>
             </div>
             <pre id="scriptCodeBlock" class="p-4 bg-slate-900 text-slate-100 rounded-b-xl overflow-x-auto text-[11px] font-mono leading-normal custom-scrollbar max-h-56">
 function doGet(e) {
+  return handleRequest(e);
+}
+function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
   try {
-    var callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
-    if (e && e.parameter && e.parameter.action) {
-      return handleAction(e.parameter, callback);
+    var p = (e && e.parameter) ? e.parameter : {};
+    if (!p.action && e && e.postData && e.postData.contents) {
+      try { p = JSON.parse(e.postData.contents); } catch(err) {}
     }
+    var callback = p.callback || null;
+    var action = p.action;
+
+    if (action && action !== "fetch") {
+      return handleAction(p, callback);
+    }
+
     var scriptStartTime = new Date().getTime();
     var now = new Date();
     now.setHours(0, 0, 0, 0); 
@@ -359,27 +376,27 @@ function doGet(e) {
     calendars.forEach(function(cal) {
       try {
         var events = cal.getEvents(now, futureEnd);
-        events.forEach(function(e) {
-          var title = e.getTitle() || "";
+        events.forEach(function(ev) {
+          var title = ev.getTitle() || "";
           if (title.indexOf("樸藝小倉庫") !== -1 && title.indexOf("預約") !== -1) {
-            var dedupKey = e.getStartTime().toISOString() + "_" + title.trim();
+            var dedupKey = ev.getStartTime().toISOString() + "_" + title.trim();
             if (!seenMap[dedupKey]) {
               seenMap[dedupKey] = true;
-              var desc = e.getDescription() || "";
+              var desc = ev.getDescription() || "";
               var phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
               var phone = phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "";
               var emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
               var email = emailMatch ? emailMatch[1].toLowerCase() : "";
 
               allEvents.push({
-                id: e.getId(),
+                id: ev.getId(),
                 calendarId: cal.getId(),
                 calendarName: cal.getName(),
                 title: title,
-                start: e.getStartTime().toISOString(),
-                end: e.getEndTime().toISOString(),
+                start: ev.getStartTime().toISOString(),
+                end: ev.getEndTime().toISOString(),
                 description: desc,
-                location: e.getLocation() || "",
+                location: ev.getLocation() || "",
                 phone: phone,
                 email: email,
                 isReturning: false
@@ -395,7 +412,7 @@ function doGet(e) {
 
     for (var k = 0; k < allEvents.length; k++) {
       var item = allEvents[k];
-      if (new Date().getTime() - scriptStartTime > 12000) break;
+      if (new Date().getTime() - scriptStartTime > 14000) break;
 
       var searchTargets = [];
       if (item.phone && item.phone.length >= 8) searchTargets.push(item.phone);
@@ -410,7 +427,7 @@ function doGet(e) {
         var foundPast = false;
         for (var c = 0; c < calendars.length; c++) {
           try {
-            if (new Date().getTime() - scriptStartTime > 12000) break;
+            if (new Date().getTime() - scriptStartTime > 14000) break;
             var pastHits = calendars[c].getEvents(allTimeStart, now, { search: query, max: 2 });
             for (var h = 0; h < pastHits.length; h++) {
               var hitTitle = pastHits[h].getTitle() || "";
@@ -434,20 +451,6 @@ function doGet(e) {
     var errJson = JSON.stringify({ status: "success", message: outerErr.toString(), data: [] });
     if (callback) return ContentService.createTextOutput(callback + "(" + errJson + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
     return ContentService.createTextOutput(errJson).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function doPost(e) {
-  try {
-    var payload = {};
-    if (e && e.postData && e.postData.contents) {
-      try { payload = JSON.parse(e.postData.contents); } catch(ex) { payload = e.parameter || {}; }
-    } else if (e && e.parameter) {
-      payload = e.parameter;
-    }
-    return handleAction(payload);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -476,9 +479,7 @@ function handleAction(payload, callback) {
     
     if (action === "toggleConfirm") {
       var newTitle = payload.newTitle;
-      if (newTitle) {
-        event.setTitle(newTitle);
-      }
+      if (newTitle) { event.setTitle(newTitle); }
       var okResult = JSON.stringify({ status: "success", newTitle: newTitle });
       if (callback) return ContentService.createTextOutput(callback + "(" + okResult + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
       return ContentService.createTextOutput(okResult).setMimeType(ContentService.MimeType.JSON);
@@ -650,7 +651,8 @@ function handleAction(payload, callback) {
           evt.people = people;
         }
 
-        const nameDisplay = isReturning ? `#${customerName}` : customerName;
+        const tagPrefix = isReturning ? '#' : '';
+        const nameDisplay = `${tagPrefix}${customerName}`;
         const confirmed = isEventConfirmed(title);
         const prefixTag = confirmed ? 'V' : '';
         const displayTitle = `${prefixTag}樸藝小倉庫預約 (${nameDisplay})${people}`;
@@ -724,7 +726,7 @@ function handleAction(payload, callback) {
 
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 8000);
+          const timeout = setTimeout(() => controller.abort(), 9000);
           const res = await fetch(urlWithCache, { signal: controller.signal });
           clearTimeout(timeout);
           rawText = await res.text();
@@ -749,27 +751,28 @@ function handleAction(payload, callback) {
 
           hideDiagnostic();
           let list = Array.isArray(json) ? json : (json.data || []);
-          if (list.length > 0) {
-            const seen = new Set();
-            const unique = [];
-            list.forEach(evt => {
-              const startKey = evt.start || '';
-              const descTest = toHalfWidthNum(evt.description || '');
-              const phoneMatch = descTest.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
-              const phoneKey = phoneMatch ? phoneMatch[1].replace(/\D/g, '') : '';
-              const nameMatch = (evt.title || '').match(/\(([^)]+)\)/);
-              const nameKey = nameMatch ? nameMatch[1].replace('#', '').trim() : '';
-              const dedupKey = `${startKey}_${phoneKey || nameKey || evt.title}`;
+          
+          // Even if list is empty or has items, if status is success, we consider connection successful
+          const seen = new Set();
+          const unique = [];
+          list.forEach(evt => {
+            const startKey = evt.start || '';
+            const descTest = toHalfWidthNum(evt.description || '');
+            const phoneMatch = descTest.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
+            const phoneKey = phoneMatch ? phoneMatch[1].replace(/\D/g, '') : '';
+            const nameMatch = (evt.title || '').match(/\(([^)]+)\)/);
+            const nameKey = nameMatch ? nameMatch[1].replace('#', '').trim() : '';
+            const dedupKey = `${startKey}_${phoneKey || nameKey || evt.title}`;
 
-              if (!seen.has(dedupKey)) {
-                seen.add(dedupKey);
-                unique.push(evt);
-              }
-            });
-            state.events = unique;
-            try { localStorage.setItem('puyi_cached_events', JSON.stringify(unique)); } catch(e){}
-            showToast(`已成功同步 ${unique.length} 筆預約`);
-          }
+            if (!seen.has(dedupKey)) {
+              seen.add(dedupKey);
+              unique.push(evt);
+            }
+          });
+          
+          state.events = unique;
+          try { localStorage.setItem('puyi_cached_events', JSON.stringify(unique)); } catch(e){}
+          showToast(`已成功同步 ${unique.length} 筆預約行程`);
         } catch (err) {
           showToast('連線受阻，已自動讀取暫存資料', true);
         } finally {
@@ -956,10 +959,10 @@ function handleAction(payload, callback) {
         const info = parseEventInfo(evt);
         const willConfirm = !info.confirmed;
 
-        const namePart = info.isReturning ? `#${info.customerName}` : info.customerName;
+        const nameTagPart = info.isReturning ? `#${info.customerName}` : info.customerName;
         const newTargetTitle = willConfirm 
-          ? `V樸藝小倉庫預約 (${namePart})${evt.people || info.people}` 
-          : `樸藝小倉庫預約 (${namePart})${evt.people || info.people}`;
+          ? `V樸藝小倉庫預約 (${nameTagPart})${evt.people || info.people}` 
+          : `樸藝小倉庫預約 (${nameTagPart})${evt.people || info.people}`;
 
         evt.title = newTargetTitle;
         renderUI();
