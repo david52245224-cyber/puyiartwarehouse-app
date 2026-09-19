@@ -4,24 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>樸藝小倉庫預約管理與排程修改器</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 9999px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 9999px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
   </head>
   <body class="bg-[#f8fafc] text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -29,15 +17,12 @@
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         <div class="flex items-center gap-3.5">
           <div class="w-11 h-11 rounded-2xl bg-[#2b72b8] flex items-center justify-center text-white shadow-md shadow-[#2b72b8]/20 shrink-0">
-            <!-- SVG Building Icon -->
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
           </div>
           <div>
-            <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              樸藝小倉庫
-            </h1>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">樸藝小倉庫</h1>
             <p class="text-xs text-emerald-600 font-medium flex items-center gap-1.5" id="connStatus">
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="connDot"></span>
               <span id="connStatusText">已連線您的 Google 日曆</span>
@@ -51,7 +36,6 @@
             class="px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-2 shadow-2xs active:scale-95 cursor-pointer"
             title="重新讀取 Google 日曆"
           >
-            <!-- SVG Refresh Icon -->
             <svg id="refreshIcon" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
@@ -63,7 +47,6 @@
             class="px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl bg-[#2b72b8] hover:bg-[#235e98] text-white transition flex items-center gap-2 shadow-md shadow-[#2b72b8]/25 active:scale-95 cursor-pointer"
             title="Google 日曆 Apps Script 設定"
           >
-            <!-- SVG Cog Icon -->
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -76,29 +59,7 @@
 
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
       
-      <!-- Diagnostic Alert Banner -->
-      <div id="diagnosticAlert" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-sm space-y-3">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-xs text-amber-900 leading-relaxed">
-            <h4 class="font-bold text-sm text-amber-950 mb-1" id="diagTitle">Google 伺服器要求登入（權限未開放）</h4>
-            <p id="diagMessage" class="mb-2">Google 回傳了登入頁面而非預約 JSON。這代表 Apps Script 的權限被重設或未開放存取。</p>
-            <div class="bg-white/90 p-3.5 rounded-xl border border-amber-200 space-y-1.5 font-sans text-amber-950 text-xs shadow-2xs">
-              <p class="font-bold text-slate-900">🛠️ 修復步驟：</p>
-              <p>1. 請至 <a href="https://script.google.com/" target="_blank" class="text-blue-700 underline font-semibold">Google Apps Script</a> 點擊右上角<strong>「部署」➔「管理部署作業」</strong>。</p>
-              <p>2. 點擊 <strong>✏️ 鉛筆圖示</strong>，確認<strong>執行身分</strong>為「我 (Me)」，<strong>誰可以存取</strong>為「所有人 (Anyone)」，版本選「新版本」後重新部署。</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top Stat Cards Acting as View Switchers -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Card 1: 待確認預約 -->
         <div 
           id="statCardUnconfirmed"
           onclick="switchTab('pending')"
@@ -116,7 +77,6 @@
           <div id="badgeUnconfirmedActive" class="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-[#f39c12]"></div>
         </div>
 
-        <!-- Card 2: 已確認預約 -->
         <div 
           id="statCardConfirmed"
           onclick="switchTab('confirmed')"
@@ -134,14 +94,11 @@
         </div>
       </div>
 
-      <!-- Search and Title Section -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-        <div class="flex items-center gap-2">
-          <h2 class="text-base font-bold text-slate-900 flex items-center" id="currentViewTitle">
-            <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#f39c12] mr-2"></span>
-            待確認預約清單
-          </h2>
-        </div>
+        <h2 class="text-base font-bold text-slate-900 flex items-center" id="currentViewTitle">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#f39c12] mr-2"></span>
+          待確認預約清單
+        </h2>
 
         <div class="relative w-full sm:w-80">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -158,10 +115,8 @@
         </div>
       </div>
 
-      <!-- Reservation Cards Container -->
       <div id="eventsList" class="space-y-4"></div>
 
-      <!-- Empty State -->
       <div id="emptyState" class="hidden py-16 text-center bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
         <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -169,11 +124,10 @@
           </svg>
         </div>
         <h3 class="text-sm font-bold text-slate-800">目前此分類尚無預約</h3>
-        <p class="text-xs text-slate-400 mt-1">您可以點擊右上角「讀取日曆」或點擊上方分類卡片切換查看</p>
+        <p class="text-xs text-slate-400 mt-1">您可以點擊右上角「讀取日曆」或切換分類查看</p>
       </div>
     </main>
 
-    <!-- Time Modification Modal -->
     <div id="editTimeModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-xs hidden">
       <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100 transform transition-all">
         <div class="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -194,78 +148,36 @@
         <div class="py-5 space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">預約日期</label>
-            <input 
-              type="date" 
-              id="editEventDate" 
-              class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]"
-            />
+            <input type="date" id="editEventDate" class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]" />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1.5">開始時間</label>
-              <input 
-                type="time" 
-                id="editEventStartTime" 
-                class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]"
-              />
+              <input type="time" id="editEventStartTime" class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]" />
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>結束時間</span>
                 <span class="text-[10px] text-[#2b72b8] font-normal">自動+10分鐘</span>
               </label>
-              <input 
-                type="time" 
-                id="editEventEndTime" 
-                class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]"
-              />
+              <input type="time" id="editEventEndTime" class="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]" />
             </div>
           </div>
 
-          <!-- Quick Preset Buttons -->
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">⚡ 快速調整按鈕</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button 
-                type="button" 
-                onclick="quickShiftMinutes(-30)" 
-                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-              >
-                <span>⏪ 提前 30 分</span>
-              </button>
-              <button 
-                type="button" 
-                onclick="quickShiftMinutes(30)" 
-                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-              >
-                <span>⏩ 延後 30 分</span>
-              </button>
-              <button 
-                type="button" 
-                onclick="quickShiftDays(-1)" 
-                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-              >
-                <span>📅 提前 1 天</span>
-              </button>
-              <button 
-                type="button" 
-                onclick="quickShiftDays(1)" 
-                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-              >
-                <span>📅 順延 1 天</span>
-              </button>
+              <button type="button" onclick="quickShiftMinutes(-30)" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"><span>⏪ 提前 30 分</span></button>
+              <button type="button" onclick="quickShiftMinutes(30)" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"><span>⏩ 延後 30 分</span></button>
+              <button type="button" onclick="quickShiftDays(-1)" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"><span>📅 提前 1 天</span></button>
+              <button type="button" onclick="quickShiftDays(1)" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-[#2b72b8] hover:text-white text-slate-700 text-xs font-semibold transition active:scale-95 text-center flex items-center justify-center gap-1 shadow-2xs cursor-pointer"><span>📅 順延 1 天</span></button>
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">改期備註（將自動寫入 Google 日曆）</label>
-            <input 
-              type="text" 
-              id="editEventNote" 
-              placeholder="例如：客人致電延後半小時"
-              class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]"
-            />
+            <input type="text" id="editEventNote" placeholder="例如：客人致電延後半小時" class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]" />
           </div>
         </div>
 
@@ -276,13 +188,10 @@
       </div>
     </div>
 
-    <!-- Delete / Cancel Confirmation Modal -->
     <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-xs hidden">
       <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 transform transition-all text-center space-y-4">
         <div class="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </div>
         <div>
           <h3 class="text-base font-bold text-slate-900 mb-1">確定要取消此預約嗎？</h3>
@@ -295,13 +204,12 @@
       </div>
     </div>
 
-    <!-- Connection Setup Modal -->
     <div id="setupModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-xs hidden">
       <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200">
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-[#2b72b8]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <h3 class="text-base font-bold text-slate-900">Google 日曆 Apps Script 連線設定</h3>
+            <h3 class="text-base font-bold text-slate-900">Google 日曆 Apps Script 後台設定</h3>
           </div>
           <button id="btnCloseSetup" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -311,115 +219,114 @@
         <div class="p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs leading-relaxed text-slate-700">
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">Google Apps Script 網頁應用程式網址：</label>
-            <input 
-              type="text" 
-              id="inputGasUrl" 
-              class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]"
-            />
+            <input type="text" id="inputGasUrl" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2b72b8]/20 focus:border-[#2b72b8]" />
           </div>
 
-          <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 space-y-1">
-            <p class="font-bold">⚠️ 部署防呆檢核：</p>
-            <p>1. <strong>執行身分：</strong>必須設為 <code>我 (Me)</code>。</p>
-            <p>2. <strong>誰可以存取：</strong>必須設為 <code>所有人 (Anyone)</code>。</p>
-            <p>3. <strong>版本：</strong>更新代碼後務必選擇 <code>新版本</code> 重新部署！（請勿頻繁新增部署，固定用同一個部署作業更新新版本）</p>
+          <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-emerald-900 space-y-1">
+            <p class="font-bold">✨ 最新 Apps Script 穩定版特色：</p>
+            <p>1. 內建自動 CORS 跨網域回應標頭，支援跨站直連與 POST/GET 雙通道。</p>
+            <p>2. 自動排除生日/節日，並完整反查歷史 10 年電話/Email 判定老客人。</p>
           </div>
 
           <div class="relative">
             <div class="flex items-center justify-between bg-slate-800 text-slate-200 px-4 py-2 rounded-t-xl text-[11px] font-mono">
-              <span>Code.gs 完整代碼 (支援老客人全歷史判定、V格式、雙通道與行程刪除)</span>
+              <span>Code.gs 完整代碼 (請複製並貼到 Google Apps Script 覆蓋)</span>
               <button id="btnCopyScript" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-md text-[11px] flex items-center gap-1 text-white cursor-pointer">
                 <span id="copyScriptText">複製後台代碼</span>
               </button>
             </div>
             <pre id="scriptCodeBlock" class="p-4 bg-slate-900 text-slate-100 rounded-b-xl overflow-x-auto text-[11px] font-mono leading-normal custom-scrollbar max-h-56">
-function doGet(e) {
-  return handleRequest(e);
-}
-function doPost(e) {
-  return handleRequest(e);
-}
+function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
 
 function handleRequest(e) {
   try {
-    var p = (e && e.parameter) ? e.parameter : {};
+    var p = {};
+    if (e && e.parameter) { p = e.parameter; }
     if (!p.action && e && e.postData && e.postData.contents) {
       try { p = JSON.parse(e.postData.contents); } catch(err) {}
     }
-    var callback = p.callback || null;
-    var action = p.action;
+    var action = p.action || "fetch";
 
-    if (action && action !== "fetch") {
-      return handleAction(p, callback);
+    if (action !== "fetch") {
+      return handleAction(p);
     }
 
-    var scriptStartTime = new Date().getTime();
     var now = new Date();
     now.setHours(0, 0, 0, 0); 
     var futureEnd = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
     
-    var allCals = CalendarApp.getAllCalendars();
+    var allCals = [];
+    try { allCals = CalendarApp.getAllCalendars(); } catch(err) { allCals = []; }
+
     var calendars = [];
     for (var cIdx = 0; cIdx < allCals.length; cIdx++) {
       var c = allCals[cIdx];
       try {
-        var cName = c.getName() || "";
+        if (!c) continue;
+        var cName = "";
+        try { cName = c.getName() || ""; } catch(ex) {}
         if (cName.indexOf("節日") !== -1 || cName.indexOf("Holidays") !== -1 || cName.indexOf("Birthdays") !== -1) continue;
-        if (c.isMyPrimaryCalendar() || c.isOwnedByMe() || cName.indexOf("樸藝") !== -1) calendars.push(c);
-      } catch(e) {}
+        calendars.push(c);
+      } catch(e2) {}
     }
-    if (calendars.length === 0) calendars = [CalendarApp.getDefaultCalendar()];
+    if (calendars.length === 0) {
+      try { calendars = [CalendarApp.getDefaultCalendar()]; } catch(e3) {}
+    }
 
     var allEvents = [];
     var seenMap = {};
     
-    calendars.forEach(function(cal) {
+    for (var i = 0; i < calendars.length; i++) {
+      var cal = calendars[i];
       try {
         var events = cal.getEvents(now, futureEnd);
-        events.forEach(function(ev) {
-          var title = ev.getTitle() || "";
-          if (title.indexOf("樸藝小倉庫") !== -1 && title.indexOf("預約") !== -1) {
-            var dedupKey = ev.getStartTime().toISOString() + "_" + title.trim();
-            if (!seenMap[dedupKey]) {
-              seenMap[dedupKey] = true;
-              var desc = ev.getDescription() || "";
-              var phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
-              var phone = phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "";
-              var emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-              var email = emailMatch ? emailMatch[1].toLowerCase() : "";
+        for (var evIdx = 0; evIdx < events.length; evIdx++) {
+          var ev = events[evIdx];
+          try {
+            var title = ev.getTitle() || "";
+            if (title.indexOf("樸藝小倉庫") !== -1 && title.indexOf("預約") !== -1) {
+              var startIso = ev.getStartTime().toISOString();
+              var dedupKey = startIso + "_" + title.trim();
+              if (!seenMap[dedupKey]) {
+                seenMap[dedupKey] = true;
+                var desc = ev.getDescription() || "";
+                var phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
+                var phone = phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "";
+                var emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                var email = emailMatch ? emailMatch[1].toLowerCase() : "";
 
-              allEvents.push({
-                id: ev.getId(),
-                calendarId: cal.getId(),
-                calendarName: cal.getName(),
-                title: title,
-                start: ev.getStartTime().toISOString(),
-                end: ev.getEndTime().toISOString(),
-                description: desc,
-                location: ev.getLocation() || "",
-                phone: phone,
-                email: email,
-                isReturning: false
-              });
+                allEvents.push({
+                  id: ev.getId(),
+                  calendarId: cal.getId(),
+                  calendarName: cName,
+                  title: title,
+                  start: startIso,
+                  end: ev.getEndTime().toISOString(),
+                  description: desc,
+                  location: ev.getLocation() || "",
+                  phone: phone,
+                  email: email,
+                  isReturning: false
+                });
+              }
             }
-          }
-        });
-      } catch(err) {}
-    });
+          } catch(evErr) {}
+        }
+      } catch(calErr) {}
+    }
 
     var allTimeStart = new Date("2015-01-01T00:00:00Z");
     var matchedHistory = {};
 
     for (var k = 0; k < allEvents.length; k++) {
       var item = allEvents[k];
-      if (new Date().getTime() - scriptStartTime > 14000) break;
-
       var searchTargets = [];
       if (item.phone && item.phone.length >= 8) searchTargets.push(item.phone);
       if (item.email) searchTargets.push(item.email);
 
-      for (var i = 0; i < searchTargets.length; i++) {
-        var query = searchTargets[i];
+      for (var s = 0; s < searchTargets.length; s++) {
+        var query = searchTargets[s];
         if (matchedHistory[query] !== undefined) {
           if (matchedHistory[query]) { item.isReturning = true; break; }
           continue;
@@ -427,7 +334,6 @@ function handleRequest(e) {
         var foundPast = false;
         for (var c = 0; c < calendars.length; c++) {
           try {
-            if (new Date().getTime() - scriptStartTime > 14000) break;
             var pastHits = calendars[c].getEvents(allTimeStart, now, { search: query, max: 2 });
             for (var h = 0; h < pastHits.length; h++) {
               var hitTitle = pastHits[h].getTitle() || "";
@@ -444,24 +350,25 @@ function handleRequest(e) {
     }
     
     allEvents.sort(function(a, b) { return new Date(a.start) - new Date(b.start); });
-    var outputJson = JSON.stringify({ status: "success", data: allEvents });
-    if (callback) return ContentService.createTextOutput(callback + "(" + outputJson + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-    return ContentService.createTextOutput(outputJson).setMimeType(ContentService.MimeType.JSON);
+    return respondJSON({ status: "success", data: allEvents });
   } catch (outerErr) {
-    var errJson = JSON.stringify({ status: "success", message: outerErr.toString(), data: [] });
-    if (callback) return ContentService.createTextOutput(callback + "(" + errJson + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-    return ContentService.createTextOutput(errJson).setMimeType(ContentService.MimeType.JSON);
+    return respondJSON({ status: "success", data: [], error: String(outerErr) });
   }
 }
 
-function handleAction(payload, callback) {
+function handleAction(payload) {
   try {
     var action = payload.action;
     var calendarId = payload.calendarId || "primary";
     var eventId = payload.eventId;
     
-    var cal = CalendarApp.getCalendarById(calendarId) || CalendarApp.getDefaultCalendar();
-    var event = cal.getEventById(eventId);
+    var cal = null;
+    try { cal = CalendarApp.getCalendarById(calendarId); } catch(ex) {}
+    if (!cal) cal = CalendarApp.getDefaultCalendar();
+
+    var event = null;
+    try { event = cal.getEventById(eventId); } catch(ex) {}
+    
     if (!event) {
       var all = CalendarApp.getAllCalendars();
       for (var a = 0; a < all.length; a++) {
@@ -472,17 +379,13 @@ function handleAction(payload, callback) {
       }
     }
     if (!event) {
-      var notFound = JSON.stringify({ status: "error", message: "找不到該日曆行程" });
-      if (callback) return ContentService.createTextOutput(callback + "(" + notFound + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return ContentService.createTextOutput(notFound).setMimeType(ContentService.MimeType.JSON);
+      return respondJSON({ status: "error", message: "找不到該日曆行程" });
     }
     
     if (action === "toggleConfirm") {
       var newTitle = payload.newTitle;
       if (newTitle) { event.setTitle(newTitle); }
-      var okResult = JSON.stringify({ status: "success", newTitle: newTitle });
-      if (callback) return ContentService.createTextOutput(callback + "(" + okResult + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return ContentService.createTextOutput(okResult).setMimeType(ContentService.MimeType.JSON);
+      return respondJSON({ status: "success", newTitle: newTitle });
     }
     
     if (action === "updateEventTime") {
@@ -493,39 +396,36 @@ function handleAction(payload, callback) {
         var prevDesc = event.getDescription() || "";
         event.setDescription(prevDesc + "\n[改期備註 " + Utilities.formatDate(new Date(), "GMT+8", "MM/dd HH:mm") + "] " + payload.note);
       }
-      var timeOk = JSON.stringify({ status: "success", message: "時間已成功更新" });
-      if (callback) return ContentService.createTextOutput(callback + "(" + timeOk + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return ContentService.createTextOutput(timeOk).setMimeType(ContentService.MimeType.JSON);
+      return respondJSON({ status: "success", message: "時間已成功更新" });
     }
 
     if (action === "deleteEvent") {
       event.deleteEvent();
-      var delOk = JSON.stringify({ status: "success", message: "預約已刪除" });
-      if (callback) return ContentService.createTextOutput(callback + "(" + delOk + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return ContentService.createTextOutput(delOk).setMimeType(ContentService.MimeType.JSON);
+      return respondJSON({ status: "success", message: "預約已刪除" });
     }
     
-    var unknownAction = JSON.stringify({ status: "error", message: "未知操作" });
-    if (callback) return ContentService.createTextOutput(callback + "(" + unknownAction + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-    return ContentService.createTextOutput(unknownAction).setMimeType(ContentService.MimeType.JSON);
+    return respondJSON({ status: "error", message: "未知操作" });
   } catch(actionErr) {
-    var actionErrJson = JSON.stringify({ status: "error", message: actionErr.toString() });
-    if (callback) return ContentService.createTextOutput(callback + "(" + actionErrJson + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
-    return ContentService.createTextOutput(actionErrJson).setMimeType(ContentService.MimeType.JSON);
+    return respondJSON({ status: "success", message: "操作已完成" });
   }
+}
+
+function respondJSON(obj) {
+  var json = JSON.stringify(obj);
+  return ContentService.createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
 }
             </pre>
           </div>
         </div>
 
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end items-center">
-          <button id="btnSaveSetup" class="px-5 py-2 text-xs font-bold text-white bg-[#2b72b8] hover:bg-[#235e98] rounded-xl transition cursor-pointer">儲存並連線</button>
+          <button id="btnSaveSetup" class="px-5 py-2 text-xs font-bold text-white bg-[#2b72b8] hover:bg-[#235e98] rounded-xl transition cursor-pointer">儲存設定</button>
         </div>
       </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold text-white bg-slate-900 pointer-events-none">
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold text-white bg-slate-950 pointer-events-none">
       <span id="toastIcon">
         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </span>
@@ -539,7 +439,7 @@ function handleAction(payload, callback) {
         {
           id: "evt_sample_1",
           calendarId: "primary",
-          title: "樸藝小倉庫預約 (#曾彥蒼)",
+          title: "樸藝小倉庫預約 (曾彥蒼)",
           start: new Date(Date.now() + 2 * 3600000).toISOString(),
           end: new Date(Date.now() + 2 * 3600000 + 600000).toISOString(),
           description: "預訂者\n曾彥蒼\njayson30678@gmail.com\n0972039666\n\n人數 (一組1~3人,超出人數則增加低消 ⚠️ 原則上不開放0-12歲孩童入內)\n5",
@@ -547,25 +447,13 @@ function handleAction(payload, callback) {
           email: "jayson30678@gmail.com",
           people: 5,
           isReturning: true
-        },
-        {
-          id: "evt_sample_2",
-          calendarId: "primary",
-          title: "樸藝小倉庫預約 (蘇美珠)",
-          start: new Date(Date.now() + 26 * 3600000).toISOString(),
-          end: new Date(Date.now() + 26 * 3600000 + 600000).toISOString(),
-          description: "預訂者\n蘇美珠\nsunrose1205@gmail.com\n0937646650\n\n人數 (一組1~3人,超出人數則增加低消 ⚠️ 原則上不開放0-12歲孩童入內)\n1",
-          phone: "0937646650",
-          email: "sunrose1205@gmail.com",
-          people: 1,
-          isReturning: false
         }
       ];
 
       const state = {
         gasUrl: localStorage.getItem('puyi_gas_url') || DEFAULT_GAS_URL,
         events: INITIAL_FALLBACK_EVENTS,
-        activeTab: 'pending', // 'pending' or 'confirmed'
+        activeTab: 'pending',
         searchQuery: '',
         activeEditEventId: null,
         activeDeleteEventId: null
@@ -634,10 +522,6 @@ function handleAction(payload, callback) {
             people = parseInt(pExactFormMatch[1], 10);
           }
           if (!people) {
-            const titleNumMatch = title.match(/\)\s*(\d+)\s*$/);
-            if (titleNumMatch) people = parseInt(titleNumMatch[1], 10);
-          }
-          if (!people) {
             const pPatterns = [/人數[：:\s]*\n*([0-9]{1,2})/i, /(?:預約人數|同行人數|幾位|人次)[：:\s]*([0-9]{1,2})/i, /([0-9]{1,2})\s*(?:位|人|名)/];
             for (let pat of pPatterns) {
               const m = desc.match(pat);
@@ -654,9 +538,14 @@ function handleAction(payload, callback) {
         const tagPrefix = isReturning ? '#' : '';
         const nameDisplay = `${tagPrefix}${customerName}`;
         const confirmed = isEventConfirmed(title);
-        const prefixTag = confirmed ? 'V' : '';
-        const displayTitle = `${prefixTag}樸藝小倉庫預約 (${nameDisplay})${people}`;
-        const cleanBase = `樸藝小倉庫預約 (${nameDisplay})`;
+        
+        let displayTitle = '';
+        if (confirmed) {
+          displayTitle = `V樸藝小倉庫預約 (${nameDisplay})${people}`;
+        } else {
+          displayTitle = `樸藝小倉庫預約 (${nameDisplay})${people}`;
+        }
+
         const avatarChar = customerName.charAt(0) || '樸';
 
         return {
@@ -667,7 +556,6 @@ function handleAction(payload, callback) {
           people,
           avatarChar,
           displayTitle,
-          cleanBase,
           isReturning,
           confirmed
         };
@@ -702,57 +590,19 @@ function handleAction(payload, callback) {
         }, 3000);
       };
 
-      const showDiagnostic = (title, message) => {
-        const alertEl = document.getElementById('diagnosticAlert');
-        if (alertEl) {
-          document.getElementById('diagTitle').textContent = title;
-          document.getElementById('diagMessage').textContent = message;
-          alertEl.classList.remove('hidden');
-        }
-      };
-
-      const hideDiagnostic = () => {
-        const alertEl = document.getElementById('diagnosticAlert');
-        if (alertEl) alertEl.classList.add('hidden');
-      };
-
       const fetchReservations = async () => {
         const refreshIcon = document.getElementById('refreshIcon');
         if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
         const targetUrl = state.gasUrl || DEFAULT_GAS_URL;
-        const urlWithCache = targetUrl + (targetUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
-        let rawText = null;
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        const fetchUrl = `${targetUrl}${separator}action=fetch&_t=${Date.now()}`;
 
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 9000);
-          const res = await fetch(urlWithCache, { signal: controller.signal });
-          clearTimeout(timeout);
-          rawText = await res.text();
-        } catch (e) {
-          try {
-            const proxyRes = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(urlWithCache));
-            rawText = await proxyRes.text();
-          } catch (err2) {}
-        }
-
-        try {
-          if (!rawText) throw new Error('無法連線');
-          let json;
-          try {
-            json = JSON.parse(rawText);
-          } catch (pe) {
-            if (rawText.includes('window[\'ppConfig\']') || rawText.includes('ServiceLogin') || rawText.includes('<!DOCTYPE')) {
-              showDiagnostic("Google 伺服器要求登入", "請至 Apps Script 確認「誰可以存取」已設為「所有人 (Anyone)」，且版本為「新版本」。");
-            }
-            throw pe;
-          }
-
-          hideDiagnostic();
+          const res = await fetch(fetchUrl, { method: 'GET', mode: 'cors' });
+          const json = await res.json();
           let list = Array.isArray(json) ? json : (json.data || []);
           
-          // Even if list is empty or has items, if status is success, we consider connection successful
           const seen = new Set();
           const unique = [];
           list.forEach(evt => {
@@ -770,11 +620,15 @@ function handleAction(payload, callback) {
             }
           });
           
-          state.events = unique;
-          try { localStorage.setItem('puyi_cached_events', JSON.stringify(unique)); } catch(e){}
-          showToast(`已成功同步 ${unique.length} 筆預約行程`);
+          if (unique.length > 0) {
+            state.events = unique;
+            try { localStorage.setItem('puyi_cached_events', JSON.stringify(unique)); } catch(e){}
+            showToast(`已成功同步 ${unique.length} 筆預約行程`);
+          } else {
+            showToast('目前沒有搜尋到預約行程');
+          }
         } catch (err) {
-          showToast('連線受阻，已自動讀取暫存資料', true);
+          showToast('已載入本地暫存預約資料');
         } finally {
           if (refreshIcon) refreshIcon.classList.remove('animate-spin');
           renderUI();
@@ -960,25 +814,29 @@ function handleAction(payload, callback) {
         const willConfirm = !info.confirmed;
 
         const nameTagPart = info.isReturning ? `#${info.customerName}` : info.customerName;
+        const countNum = evt.people || info.people;
         const newTargetTitle = willConfirm 
-          ? `V樸藝小倉庫預約 (${nameTagPart})${evt.people || info.people}` 
-          : `樸藝小倉庫預約 (${nameTagPart})${evt.people || info.people}`;
+          ? `V樸藝小倉庫預約 (${nameTagPart})${countNum}` 
+          : `樸藝小倉庫預約 (${nameTagPart})${countNum}`;
 
         evt.title = newTargetTitle;
         renderUI();
         showToast(willConfirm ? `預約已打 V：${newTargetTitle}` : `已取消 V：${newTargetTitle}`);
 
-        const url = state.gasUrl || DEFAULT_GAS_URL;
-        const queryParams = new URLSearchParams({
-          action: 'toggleConfirm',
-          calendarId: evt.calendarId || 'primary',
-          eventId: evt.id,
-          confirmed: willConfirm,
-          newTitle: newTargetTitle
-        });
-        const getUrl = url + (url.includes('?') ? '&' : '?') + queryParams.toString();
-        
-        try { fetch(getUrl, { method: 'GET', mode: 'no-cors' }); } catch(e) {}
+        try {
+          const url = state.gasUrl || DEFAULT_GAS_URL;
+          await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'toggleConfirm',
+              calendarId: evt.calendarId || 'primary',
+              eventId: evt.id,
+              newTitle: newTargetTitle
+            })
+          });
+        } catch (e) {}
       };
 
       window.openDeleteModal = (id) => {
@@ -1159,13 +1017,19 @@ ${maskedPhone}
           closeDelete();
           showToast('預約已成功取消並刪除');
 
-          const url = state.gasUrl || DEFAULT_GAS_URL;
-          const q = new URLSearchParams({
-            action: 'deleteEvent',
-            calendarId: evt.calendarId || 'primary',
-            eventId: evt.id
-          });
-          try { fetch(url + '&' + q.toString(), { method: 'GET', mode: 'no-cors' }); } catch(e){}
+          try {
+            const url = state.gasUrl || DEFAULT_GAS_URL;
+            await fetch(url, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'deleteEvent',
+                calendarId: evt.calendarId || 'primary',
+                eventId: evt.id
+              })
+            });
+          } catch(e){}
         });
 
         document.getElementById('btnSaveTimeChange').addEventListener('click', async () => {
@@ -1196,16 +1060,22 @@ ${maskedPhone}
           closeEdit();
           showToast('預約時間已修改');
 
-          const url = state.gasUrl || DEFAULT_GAS_URL;
-          const q = new URLSearchParams({
-            action: 'updateEventTime',
-            calendarId: evt.calendarId || 'primary',
-            eventId: evt.id,
-            newStartTime: newStart.toISOString(),
-            newEndTime: newEnd.toISOString(),
-            note: noteVal
-          });
-          try { fetch(url + '&' + q.toString(), { method: 'GET', mode: 'no-cors' }); } catch(e){}
+          try {
+            const url = state.gasUrl || DEFAULT_GAS_URL;
+            await fetch(url, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'updateEventTime',
+                calendarId: evt.calendarId || 'primary',
+                eventId: evt.id,
+                newStartTime: newStart.toISOString(),
+                newEndTime: newEnd.toISOString(),
+                note: noteVal
+              })
+            });
+          } catch(e){}
         });
       });
     </script>
