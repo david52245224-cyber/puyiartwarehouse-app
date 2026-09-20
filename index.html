@@ -13,6 +13,7 @@
     </style>
   </head>
   <body class="bg-[#f8fafc] text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+    
     <header class="bg-white border-b border-slate-200/85 sticky top-0 z-30 shadow-xs">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         <div class="flex items-center gap-3.5">
@@ -224,8 +225,8 @@
 
           <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-emerald-900 space-y-1">
             <p class="font-bold">✨ 最新 Apps Script 穩定版特色：</p>
-            <p>1. 內建自動 CORS 跨網域回應標頭，支援跨站直連與 POST/GET 雙通道。</p>
-            <p>2. 自動排除生日/節日，並完整反查歷史 10 年電話/Email 判定老客人。</p>
+            <p>1. 支援老客人全歷史反查（創店至今）與精準人數識別。</p>
+            <p>2. 打 V 標題格式完美對應：`V樸藝小倉庫預約 (#姓名)人數`。</p>
           </div>
 
           <div class="relative">
@@ -291,10 +292,20 @@ function handleRequest(e) {
               if (!seenMap[dedupKey]) {
                 seenMap[dedupKey] = true;
                 var desc = ev.getDescription() || "";
+                
                 var phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
                 var phone = phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "";
                 var emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
                 var email = emailMatch ? emailMatch[1].toLowerCase() : "";
+
+                var people = 1;
+                var pMatch = desc.match(/人數[^\n\r]*\n+([0-9]{1,2})/i);
+                if (pMatch) {
+                  people = parseInt(pMatch[1], 10);
+                } else {
+                  var altMatch = desc.match(/(?:人數|幾位|人次)[：:\s]*([0-9]{1,2})/i);
+                  if (altMatch) people = parseInt(altMatch[1], 10);
+                }
 
                 allEvents.push({
                   id: ev.getId(),
@@ -307,6 +318,7 @@ function handleRequest(e) {
                   location: ev.getLocation() || "",
                   phone: phone,
                   email: email,
+                  people: people,
                   isReturning: false
                 });
               }
@@ -439,7 +451,7 @@ function respondJSON(obj) {
         {
           id: "evt_sample_1",
           calendarId: "primary",
-          title: "樸藝小倉庫預約 (曾彥蒼)",
+          title: "樸藝小倉庫預約 (#曾彥蒼)",
           start: new Date(Date.now() + 2 * 3600000).toISOString(),
           end: new Date(Date.now() + 2 * 3600000 + 600000).toISOString(),
           description: "預訂者\n曾彥蒼\njayson30678@gmail.com\n0972039666\n\n人數 (一組1~3人,超出人數則增加低消 ⚠️ 原則上不開放0-12歲孩童入內)\n5",
@@ -456,7 +468,8 @@ function respondJSON(obj) {
         activeTab: 'pending',
         searchQuery: '',
         activeEditEventId: null,
-        activeDeleteEventId: null
+        activeDeleteEventId: null,
+        actionLockMap: {} // 防呆鎖：防止快速點擊打架
       };
 
       try {
@@ -689,9 +702,10 @@ function respondJSON(obj) {
         listEl.innerHTML = filtered.map(evt => {
           const info = parseEventInfo(evt);
           const timeTag = formatTimeTag(evt.start, evt.end);
+          const isLocked = state.actionLockMap[evt.id];
 
           return `
-            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-[#fef3c7] shadow-xs relative transition duration-200">
+            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-[#fef3c7] shadow-xs relative transition duration-200 ${isLocked ? 'opacity-70 pointer-events-none' : ''}">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                   ${info.confirmed ? `
@@ -807,8 +821,15 @@ function respondJSON(obj) {
       };
 
       window.toggleConfirmEvent = async (id) => {
+        if (state.actionLockMap[id]) return; // 防止快速點擊打架
+        state.actionLockMap[id] = true;
+        renderUI();
+
         const evt = state.events.find(e => e.id === id);
-        if (!evt) return;
+        if (!evt) {
+          delete state.actionLockMap[id];
+          return;
+        }
 
         const info = parseEventInfo(evt);
         const willConfirm = !info.confirmed;
@@ -837,6 +858,12 @@ function respondJSON(obj) {
             })
           });
         } catch (e) {}
+
+        // 解除防呆鎖
+        setTimeout(() => {
+          delete state.actionLockMap[id];
+          renderUI();
+        }, 1200);
       };
 
       window.openDeleteModal = (id) => {
