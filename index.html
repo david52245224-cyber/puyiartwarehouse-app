@@ -26,7 +26,7 @@
             <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">樸藝小倉庫</h1>
             <p class="text-xs text-emerald-600 font-medium flex items-center gap-1.5" id="connStatus">
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="connDot"></span>
-              <span id="connStatusText">已連線您的 Google 日曆 (樸藝實體店預約)</span>
+              <span id="connStatusText">已連線 Google 日曆 (樸藝實體店預約)</span>
             </p>
           </div>
         </div>
@@ -59,7 +59,6 @@
     </header>
 
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
-      
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div 
           id="statCardUnconfirmed"
@@ -210,7 +209,7 @@
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-[#2b72b8]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <h3 class="text-base font-bold text-slate-900">Google 日曆 Apps Script 後台設定 (僅掃描「樸藝實體店預約」專屬版)</h3>
+            <h3 class="text-base font-bold text-slate-900">Google 日曆 Apps Script 後台設定 (專屬掃描「樸藝實體店預約」)</h3>
           </div>
           <button id="btnCloseSetup" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -224,14 +223,14 @@
           </div>
 
           <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-emerald-900 space-y-1">
-            <p class="font-bold">⚡ 穩定極速版特色：</p>
-            <p>1. 嚴格只掃描專屬日曆 **「樸藝實體店預約」**，讀取秒開不延遲。</p>
-            <p>2. 採用網址參數直通傳輸，確保第一次點擊「打 V」或「取消」時 Google 日曆能 100% 立即同步更新！</p>
+            <p class="font-bold">⚡ 極速精準版特色：</p>
+            <p>1. 嚴格只掃描專屬日曆 **「樸藝實體店預約」**，讀取秒開零延遲。</p>
+            <p>2. 採用網址參數直通傳輸，確保第一次點擊按鈕時 Google 日曆能 100% 立即同步更新！</p>
           </div>
 
           <div class="relative">
             <div class="flex items-center justify-between bg-slate-800 text-slate-200 px-4 py-2 rounded-t-xl text-[11px] font-mono">
-              <span>Code.gs 專屬日曆穩定版完整代碼 (請複製並貼到 Google Apps Script 覆蓋)</span>
+              <span>Code.gs 專屬日曆極速版完整代碼 (請複製並貼到 Google Apps Script 覆蓋)</span>
               <button id="btnCopyScript" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-md text-[11px] flex items-center gap-1 text-white cursor-pointer">
                 <span id="copyScriptText">複製後台代碼</span>
               </button>
@@ -257,25 +256,24 @@ function handleRequest(e) {
     now.setHours(0, 0, 0, 0); 
     var futureEnd = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
     
-    var calendars = [];
+    var targetCal = null;
     try {
       var matchedCals = CalendarApp.getCalendarsByName("樸藝實體店預約");
       if (matchedCals && matchedCals.length > 0) {
-        calendars = matchedCals;
+        targetCal = matchedCals[0];
       } else {
-        calendars.push(CalendarApp.getDefaultCalendar());
+        targetCal = CalendarApp.getDefaultCalendar();
       }
     } catch(err) {
-      try { calendars.push(CalendarApp.getDefaultCalendar()); } catch(e){}
+      try { targetCal = CalendarApp.getDefaultCalendar(); } catch(e){}
     }
 
     var allEvents = [];
     var seenMap = {};
     
-    for (var i = 0; i < calendars.length; i++) {
-      var cal = calendars[i];
+    if (targetCal) {
       try {
-        var events = cal.getEvents(now, futureEnd);
+        var events = targetCal.getEvents(now, futureEnd);
         for (var evIdx = 0; evIdx < events.length; evIdx++) {
           var ev = events[evIdx];
           try {
@@ -302,8 +300,8 @@ function handleRequest(e) {
 
               allEvents.push({
                 id: ev.getId(),
-                calendarId: cal.getId(),
-                calendarName: cal.getName() || "樸藝實體店預約",
+                calendarId: targetCal.getId(),
+                calendarName: targetCal.getName() || "樸藝實體店預約",
                 title: title,
                 start: startIso,
                 end: ev.getEndTime().toISOString(),
@@ -337,7 +335,7 @@ function handleRequest(e) {
         }
         var foundPast = false;
         try {
-          var pastHits = calendars[0].getEvents(allTimeStart, now, { search: query, max: 2 });
+          var pastHits = targetCal.getEvents(allTimeStart, now, { search: query, max: 2 });
           for (var h = 0; h < pastHits.length; h++) {
             foundPast = true; break;
           }
@@ -371,17 +369,6 @@ function handleAction(payload) {
     var event = null;
     try { event = cal.getEventById(eventId); } catch(ex) {}
     
-    if (!event) {
-      try {
-        var allCals = CalendarApp.getCalendarsByName("樸藝實體店預約");
-        for (var a = 0; a < allCals.length; a++) {
-          try {
-            var candidate = allCals[a].getEventById(eventId);
-            if (candidate) { event = candidate; break; }
-          } catch(ex) {}
-        }
-      } catch(ex2) {}
-    }
     if (!event) {
       return respondJSON({ status: "error", message: "找不到該日曆行程" });
     }
@@ -764,25 +751,31 @@ function respondJSON(obj) {
               </div>
 
               <div class="flex items-center justify-end gap-2.5 pt-1">
-                <button 
-                  onclick="copyConfirmationMsg('${evt.id}')"
-                  class="px-4 py-2 text-xs font-bold rounded-xl bg-[#ebf5fb] hover:bg-[#d6eaf8] text-[#2980b9] transition flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                  <span>複製確認訊息</span>
-                </button>
+                ${info.confirmed ? `
+                  <button 
+                    onclick="copyConfirmationMsg('${evt.id}')"
+                    class="px-4 py-2 text-xs font-bold rounded-xl bg-[#ebf5fb] hover:bg-[#d6eaf8] text-[#2980b9] transition flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <span>複製確認訊息</span>
+                  </button>
 
-                <button 
-                  onclick="toggleConfirmEvent('${evt.id}')"
-                  class="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
-                    info.confirmed 
-                    ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' 
-                    : 'bg-[#27ae60] hover:bg-[#219653] text-white active:scale-95'
-                  }"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  <span>${info.confirmed ? '取消 V' : '打 V'}</span>
-                </button>
+                  <button 
+                    onclick="toggleConfirmEvent('${evt.id}')"
+                    class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <span>取消 V</span>
+                  </button>
+                ` : `
+                  <button 
+                    onclick="confirmAndCopy('${evt.id}')"
+                    class="px-4.5 py-2 text-xs font-bold rounded-xl bg-[#27ae60] hover:bg-[#219653] text-white transition flex items-center gap-1.5 shadow-md shadow-[#27ae60]/25 active:scale-95 cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <span>✨ 一鍵打V並複製訊息</span>
+                  </button>
+                `}
 
                 <button 
                   onclick="openDeleteModal('${evt.id}')"
@@ -851,7 +844,21 @@ function respondJSON(obj) {
         setTimeout(() => {
           delete state.actionLockMap[id];
           renderUI();
-        }, 1000);
+        }, 800);
+      };
+
+      window.confirmAndCopy = async (id) => {
+        const evt = state.events.find(e => e.id === id);
+        if (!evt) return;
+        const info = parseEventInfo(evt);
+        
+        // 1. Copy confirmation message
+        copyConfirmationMsg(id);
+
+        // 2. If not confirmed, add V
+        if (!info.confirmed) {
+          await toggleConfirmEvent(id);
+        }
       };
 
       window.openDeleteModal = (id) => {
