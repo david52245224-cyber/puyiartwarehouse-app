@@ -876,7 +876,9 @@ function respondJSON(obj) {
         const info = parseEventInfo(evt);
 
         const startDate = new Date(evt.start);
-        const bookingTime = `${startDate.getMonth() + 1}/${startDate.getDate()} ${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+        const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const weekStr = weekDays[startDate.getDay()];
+        const bookingTime = `${startDate.getMonth() + 1}/${startDate.getDate()} (${weekStr}) ${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
 
         let rawName = info.customerName || '貴賓';
         let maskedName = rawName.length > 1 ? rawName.charAt(0) + '*'.repeat(rawName.length - 1) : rawName + '*';
@@ -900,7 +902,7 @@ ${maskedPhone}
 💰 付款：現金、匯款、刷卡、LinePay、Apple Pay
 🧾 發票：提供載具／統編
 📦 提供 $10 付費厚紙箱（滿 $899 紙箱免費）
-🚚 滿 $3,000 可寄送（約1週，出清品不寄送）
+🚚 滿 $3,000 可以寄送（約1週，出清品不寄送）
 ———————————————
 ⚠️ 維護空間品質，一組為單位低消 $500
 ❤️ VIP（累積滿 $5,000）無低消
