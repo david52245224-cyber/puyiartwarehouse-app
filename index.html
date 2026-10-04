@@ -209,7 +209,7 @@
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-[#2b72b8]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <h3 class="text-base font-bold text-slate-900">Google 日曆 Apps Script 後台設定 (專屬掃描「樸藝實體店預約」)</h3>
+            <h3 class="text-base font-bold text-slate-900">Google Apps Script 後台設定 (專屬掃描「樸藝實體店預約」)</h3>
           </div>
           <button id="btnCloseSetup" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -887,7 +887,8 @@ function respondJSON(obj) {
         let maskedPhone = rawPhone.length >= 4 ? '*'.repeat(rawPhone.length - 4) + rawPhone.slice(-4) : (info.phone || '無留電話');
         const emailStr = info.email || '無留信箱';
 
-        const msg = `您好👋🏽預約資訊如下
+        const msg = `您好👋🏽
+預約資訊如下
 預約確認 ${bookingTime}
 ${maskedName}
 ${emailStr}
@@ -901,12 +902,14 @@ ${maskedPhone}
 ———————————————
 💰 付款：現金、匯款、刷卡、LinePay、Apple Pay
 🧾 發票：提供載具／統編
-📦 提供 $10 付費厚紙箱（滿 $899 紙箱免費）
-🚚 滿 $3,000 可以寄送（約1週，出清品不寄送）
+📦 建議自備購物袋（現場皆會防撞包裝，亦備有紙箱）
+🚚 滿 $3,000 可以寄送（約1週，特價出清品除外）
 ———————————————
 ⚠️ 維護空間品質，一組為單位低消 $500
 ❤️ VIP（累積滿 $5,000）無低消
-🙏 若需取消請提前 2 小時告知`;
+🙏 若需取消請提前 2 小時告知
+
+期待您前來挑選器皿`;
 
         const temp = document.createElement('textarea');
         temp.value = msg;
