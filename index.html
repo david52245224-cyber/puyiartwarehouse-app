@@ -239,6 +239,254 @@
 function doGet(e) { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
 
+function toHalfWidthNum(str) {
+  if (!str) return "";
+  return String(str).replace(/[０-９]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
+}
+
+function normalizePhoneText(str) {
+  return toHalfWidthNum(str)
+    .replace(/\uFF0B/g, "+")
+    .replace(/[\uFF0D\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-")
+    .replace(/\uFF08/g, "(")
+    .replace(/\uFF09/g, ")")
+    .replace(/[\u00A0\u3000]/g, " ");
+}
+
+function normalizePhoneWhitespace(str) {
+  return String(str).replace(/[ \t]+/g, " ").trim();
+}
+
+function phoneDigitCount(str) {
+  var m = String(str).match(/\d/g);
+  return m ? m.length : 0;
+}
+
+function isDateLikePhone(raw) {
+  var t = normalizePhoneWhitespace(raw);
+  if (/^(?:19|20)\d{2}[\s.\-]\d{1,2}[\s.\-]\d{1,2}$/.test(t)) return true;
+  if (/^\d{1,2}[\s.\-]\d{1,2}[\s.\-](?:19|20)\d{2}$/.test(t)) return true;
+  var digits = t.replace(/\D/g, "");
+  if (digits.length === 8 && /^(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])$/.test(digits) && t.charAt(0) !== "+" && t.indexOf("(") === -1) {
+    return true;
+  }
+  return false;
+}
+
+function stripPhoneNoise(text) {
+  return String(text)
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, " ")
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/(?:19|20)\d{2}[\s./-]\d{1,2}[\s./-]\d{1,2}/g, " ")
+    .replace(/\d{1,2}[\s./-]\d{1,2}[\s./-](?:19|20)\d{2}/g, " ")
+    .replace(/\d{1,2}:\d{2}(?::\d{2})?/g, " ");
+}
+
+function cleanPhoneEdges(raw) {
+  return String(raw).replace(/^[\s.\-]+/, "").replace(/[\s.\-]+$/, "");
+}
+
+function isPhoneSepChar(c) {
+  return c === " " || c === "\t" || c === "(" || c === ")" || c === "." || c === "-";
+}
+
+function findPhoneCandidates(text) {
+  var src = String(text || "");
+  var results = [];
+  var i = 0;
+  while (i < src.length) {
+    var ch = src.charAt(i);
+    var prev = i > 0 ? src.charAt(i - 1) : "";
+    var start = -1;
+    var sawPlus = false;
+    if (ch === "+" && (i === 0 || prev < "0" || prev > "9")) {
+      var k = i + 1;
+      while (k < src.length && (src.charAt(k) === " " || src.charAt(k) === "\t")) k++;
+      if (k < src.length && src.charAt(k) >= "0" && src.charAt(k) <= "9") {
+        start = i;
+        sawPlus = true;
+      }
+    } else if (ch === "(" && (i === 0 || prev < "0" || prev > "9")) {
+      var p = i + 1;
+      while (p < src.length && (src.charAt(p) === " " || src.charAt(p) === "\t")) p++;
+      if (p < src.length && src.charAt(p) >= "0" && src.charAt(p) <= "9") start = i;
+    } else if (ch >= "0" && ch <= "9" && (i === 0 || prev < "0" || prev > "9")) {
+      start = i;
+    }
+    if (start < 0) { i++; continue; }
+
+    var end = start + (sawPlus ? 1 : 0);
+    while (end < src.length && (src.charAt(end) === " " || src.charAt(end) === "\t")) end++;
+    var digits = "";
+    var sawSep = sawPlus;
+    while (end < src.length && digits.length < 15) {
+      var c = src.charAt(end);
+      if (c >= "0" && c <= "9") {
+        digits += c;
+        end++;
+        continue;
+      }
+      if (!isPhoneSepChar(c)) break;
+      var n = end;
+      while (n < src.length && isPhoneSepChar(src.charAt(n))) n++;
+      if (n >= src.length || src.charAt(n) < "0" || src.charAt(n) > "9") break;
+      var gap = src.slice(end, n);
+      var spaces = 0;
+      var gi;
+      for (gi = 0; gi < gap.length; gi++) {
+        if (gap.charAt(gi) === " " || gap.charAt(gi) === "\t") spaces++;
+      }
+      if (spaces > 3) break;
+      if (gap.indexOf(".") !== -1 && spaces > 0) break;
+      sawSep = true;
+      end = n;
+    }
+    var tooLong = false;
+    if (digits.length >= 15 && end < src.length) {
+      var look = end;
+      while (look < src.length && isPhoneSepChar(src.charAt(look))) look++;
+      if (look < src.length && src.charAt(look) >= "0" && src.charAt(look) <= "9") {
+        tooLong = true;
+        while (look < src.length && (isPhoneSepChar(src.charAt(look)) || (src.charAt(look) >= "0" && src.charAt(look) <= "9"))) look++;
+        end = look;
+      }
+    }
+    var raw = cleanPhoneEdges(src.slice(start, end));
+    var onlyDigits = raw.replace(/\D/g, "");
+    if (!tooLong && onlyDigits.length >= 7 && onlyDigits.length <= 15 && !isDateLikePhone(raw)) {
+      results.push({
+        display: normalizePhoneWhitespace(raw),
+        digits: onlyDigits,
+        index: start,
+        formatted: sawSep || raw.charAt(0) === "+"
+      });
+    }
+    i = Math.max(end, start + 1);
+  }
+  return results;
+}
+
+function lineIsOnlyPhone(line) {
+  var t = normalizePhoneWhitespace(line);
+  if (!t) return false;
+  if (phoneDigitCount(t) < 7 || phoneDigitCount(t) > 15) return false;
+  return t.replace(/[\d\s().+\-]/g, "").length === 0 && !isDateLikePhone(t);
+}
+
+function hasIdContext(text, index) {
+  var before = text.slice(Math.max(0, index - 12), index);
+  return /訂單|編號|單號|序號|客編|No\.?|#|ID/i.test(before);
+}
+
+function pickPhoneCandidate(list, allowBare) {
+  var pool = [];
+  var i;
+  for (i = 0; i < list.length; i++) {
+    if (allowBare || list[i].formatted) pool.push(list[i]);
+  }
+  if (!pool.length) return null;
+  pool.sort(function(a, b) {
+    var ap = a.display.charAt(0) === "+" ? 0 : 1;
+    var bp = b.display.charAt(0) === "+" ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return a.index - b.index;
+  });
+  return pool[0];
+}
+
+function lineHasPhoneLabel(line) {
+  if (/(?:行動電話|聯絡電話|電話|手機)\s*[:：]/.test(line)) return true;
+  if (/^\s*(?:行動電話|聯絡電話|電話|手機)\s*$/.test(line)) return true;
+  if (/(?:^|\s)(?:Telephone|Phone|Mobile|Cell|Tel)\.?\s*[:：]/i.test(line)) return true;
+  if (/^\s*(?:Telephone|Phone|Mobile|Cell|Tel)\.?\s*$/i.test(line)) return true;
+  return false;
+}
+
+function candidatesWithoutIds(list, src, allowBare) {
+  var kept = [];
+  var i;
+  for (i = 0; i < list.length; i++) {
+    if (!list[i].formatted && hasIdContext(src, list[i].index)) continue;
+    if (!list[i].formatted && !allowBare && list[i].digits.length < 8) continue;
+    kept.push(list[i]);
+  }
+  return kept;
+}
+
+function extractLabeledPhone(text) {
+  var lines = String(text).split(/\r?\n/);
+  var i;
+  for (i = 0; i < lines.length; i++) {
+    if (!lineHasPhoneLabel(lines[i])) continue;
+    var src = stripPhoneNoise(lines[i]);
+    var onLine = pickPhoneCandidate(candidatesWithoutIds(findPhoneCandidates(src), src, true), true);
+    if (onLine) return onLine;
+    if (i + 1 < lines.length && lineIsOnlyPhone(lines[i + 1])) {
+      var nextSrc = stripPhoneNoise(lines[i + 1]);
+      var onNext = pickPhoneCandidate(findPhoneCandidates(nextSrc), true);
+      if (onNext) return onNext;
+    }
+  }
+  return null;
+}
+
+function preferTaiwanDigits(info) {
+  if (info && /^09\d{8}$/.test(info.digits)) return { display: info.digits, digits: info.digits };
+  return info;
+}
+
+function extractAnyPhone(text) {
+  var src = stripPhoneNoise(text);
+  var candidates = candidatesWithoutIds(findPhoneCandidates(src), src, false);
+  var formatted = [];
+  var bare = [];
+  var i;
+  for (i = 0; i < candidates.length; i++) {
+    if (candidates[i].formatted) formatted.push(candidates[i]);
+    else bare.push(candidates[i]);
+  }
+  var pool = formatted.length ? formatted : bare;
+  if (!pool.length) {
+    var lines = String(text).split(/\r?\n/);
+    for (i = 0; i < lines.length; i++) {
+      if (!lineIsOnlyPhone(lines[i])) continue;
+      var lineSrc = stripPhoneNoise(lines[i]);
+      var lineHits = findPhoneCandidates(lineSrc);
+      if (lineHits.length) { pool = [lineHits[0]]; break; }
+    }
+  }
+  return pickPhoneCandidate(pool, true);
+}
+
+function extractPhone(desc) {
+  var text = normalizePhoneText(desc || "");
+  if (!text) return { display: "", digits: "" };
+
+  var tw = text.match(/(?:^|\D)(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})(?!\d)/);
+  if (tw) {
+    var twDigits = tw[1].replace(/\D/g, "");
+    if (twDigits.length === 10) return { display: twDigits, digits: twDigits };
+  }
+
+  var labeled = preferTaiwanDigits(extractLabeledPhone(text));
+  if (labeled) return { display: labeled.display, digits: labeled.digits };
+
+  var any = preferTaiwanDigits(extractAnyPhone(text));
+  if (any) return { display: any.display, digits: any.digits };
+  return { display: "", digits: "" };
+}
+
+function taipeiStartOfDay(date) {
+  var ymd = Utilities.formatDate(date, "Asia/Taipei", "yyyy-MM-dd");
+  return new Date(ymd + "T00:00:00+08:00");
+}
+
+function taipeiStamp(date) {
+  return Utilities.formatDate(date, "Asia/Taipei", "MM/dd HH:mm");
+}
+
 function handleRequest(e) {
   try {
     var p = {};
@@ -252,8 +500,7 @@ function handleRequest(e) {
       return handleAction(p);
     }
 
-    var now = new Date();
-    now.setHours(0, 0, 0, 0); 
+    var now = taipeiStartOfDay(new Date());
     var futureEnd = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
     
     var targetCal = null;
@@ -283,9 +530,8 @@ function handleRequest(e) {
             if (!seenMap[dedupKey]) {
               seenMap[dedupKey] = true;
               var desc = ev.getDescription() || "";
-              
-              var phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
-              var phone = phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "";
+              var phoneInfo = extractPhone(desc);
+              var phone = phoneInfo.display;
               var emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
               var email = emailMatch ? emailMatch[1].toLowerCase() : "";
 
@@ -324,7 +570,9 @@ function handleRequest(e) {
     for (var k = 0; k < allEvents.length; k++) {
       var item = allEvents[k];
       var searchTargets = [];
-      if (item.phone && item.phone.length >= 8) searchTargets.push(item.phone);
+      var itemDigits = String(item.phone || "").replace(/\D/g, "");
+      if (itemDigits.length >= 8) searchTargets.push(itemDigits);
+      if (item.phone && item.phone !== itemDigits && item.phone.length >= 8) searchTargets.push(item.phone);
       if (item.email) searchTargets.push(item.email);
 
       for (var s = 0; s < searchTargets.length; s++) {
@@ -385,7 +633,7 @@ function handleAction(payload) {
       event.setTime(newStart, newEnd);
       if (payload.note && String(payload.note).trim() !== "") {
         var prevDesc = event.getDescription() || "";
-        event.setDescription(prevDesc + "\n[改期備註 " + Utilities.formatDate(new Date(), "GMT+8", "MM/dd HH:mm") + "] " + payload.note);
+        event.setDescription(prevDesc + "\n[改期備註 " + taipeiStamp(new Date()) + "] " + payload.note);
       }
       return respondJSON({ status: "success", message: "時間已成功更新" });
     }
@@ -406,7 +654,7 @@ function respondJSON(obj) {
   return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
-            </pre>
+</pre>
           </div>
         </div>
 
@@ -464,6 +712,280 @@ function respondJSON(obj) {
         return String(str).replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
       };
 
+      function normalizePhoneText(str) {
+        return toHalfWidthNum(str)
+          .replace(/\uFF0B/g, "+")
+          .replace(/[\uFF0D\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-")
+          .replace(/\uFF08/g, "(")
+          .replace(/\uFF09/g, ")")
+          .replace(/[\u00A0\u3000]/g, " ");
+      }
+
+      function normalizePhoneWhitespace(str) {
+        return String(str).replace(/[ \t]+/g, " ").trim();
+      }
+
+      function phoneDigitCount(str) {
+        var m = String(str).match(/\d/g);
+        return m ? m.length : 0;
+      }
+
+      function isDateLikePhone(raw) {
+        var t = normalizePhoneWhitespace(raw);
+        if (/^(?:19|20)\d{2}[\s.\-]\d{1,2}[\s.\-]\d{1,2}$/.test(t)) return true;
+        if (/^\d{1,2}[\s.\-]\d{1,2}[\s.\-](?:19|20)\d{2}$/.test(t)) return true;
+        var digits = t.replace(/\D/g, "");
+        if (digits.length === 8 && /^(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])$/.test(digits) && t.charAt(0) !== "+" && t.indexOf("(") === -1) {
+          return true;
+        }
+        return false;
+      }
+
+      function stripPhoneNoise(text) {
+        return String(text)
+          .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, " ")
+          .replace(/https?:\/\/\S+/gi, " ")
+          .replace(/(?:19|20)\d{2}[\s./-]\d{1,2}[\s./-]\d{1,2}/g, " ")
+          .replace(/\d{1,2}[\s./-]\d{1,2}[\s./-](?:19|20)\d{2}/g, " ")
+          .replace(/\d{1,2}:\d{2}(?::\d{2})?/g, " ");
+      }
+
+      function cleanPhoneEdges(raw) {
+        return String(raw).replace(/^[\s.\-]+/, "").replace(/[\s.\-]+$/, "");
+      }
+
+      function isPhoneSepChar(c) {
+        return c === " " || c === "\t" || c === "(" || c === ")" || c === "." || c === "-";
+      }
+
+      function findPhoneCandidates(text) {
+        var src = String(text || "");
+        var results = [];
+        var i = 0;
+        while (i < src.length) {
+          var ch = src.charAt(i);
+          var prev = i > 0 ? src.charAt(i - 1) : "";
+          var start = -1;
+          var sawPlus = false;
+          if (ch === "+" && (i === 0 || prev < "0" || prev > "9")) {
+            var k = i + 1;
+            while (k < src.length && (src.charAt(k) === " " || src.charAt(k) === "\t")) k++;
+            if (k < src.length && src.charAt(k) >= "0" && src.charAt(k) <= "9") {
+              start = i;
+              sawPlus = true;
+            }
+          } else if (ch === "(" && (i === 0 || prev < "0" || prev > "9")) {
+            var p = i + 1;
+            while (p < src.length && (src.charAt(p) === " " || src.charAt(p) === "\t")) p++;
+            if (p < src.length && src.charAt(p) >= "0" && src.charAt(p) <= "9") start = i;
+          } else if (ch >= "0" && ch <= "9" && (i === 0 || prev < "0" || prev > "9")) {
+            start = i;
+          }
+          if (start < 0) { i++; continue; }
+
+          var end = start + (sawPlus ? 1 : 0);
+          while (end < src.length && (src.charAt(end) === " " || src.charAt(end) === "\t")) end++;
+          var digits = "";
+          var sawSep = sawPlus;
+          while (end < src.length && digits.length < 15) {
+            var c = src.charAt(end);
+            if (c >= "0" && c <= "9") {
+              digits += c;
+              end++;
+              continue;
+            }
+            if (!isPhoneSepChar(c)) break;
+            var n = end;
+            while (n < src.length && isPhoneSepChar(src.charAt(n))) n++;
+            if (n >= src.length || src.charAt(n) < "0" || src.charAt(n) > "9") break;
+            var gap = src.slice(end, n);
+            var spaces = 0;
+            var gi;
+            for (gi = 0; gi < gap.length; gi++) {
+              if (gap.charAt(gi) === " " || gap.charAt(gi) === "\t") spaces++;
+            }
+            if (spaces > 3) break;
+            if (gap.indexOf(".") !== -1 && spaces > 0) break;
+            sawSep = true;
+            end = n;
+          }
+          var tooLong = false;
+          if (digits.length >= 15 && end < src.length) {
+            var look = end;
+            while (look < src.length && isPhoneSepChar(src.charAt(look))) look++;
+            if (look < src.length && src.charAt(look) >= "0" && src.charAt(look) <= "9") {
+              tooLong = true;
+              while (look < src.length && (isPhoneSepChar(src.charAt(look)) || (src.charAt(look) >= "0" && src.charAt(look) <= "9"))) look++;
+              end = look;
+            }
+          }
+          var raw = cleanPhoneEdges(src.slice(start, end));
+          var onlyDigits = raw.replace(/\D/g, "");
+          if (!tooLong && onlyDigits.length >= 7 && onlyDigits.length <= 15 && !isDateLikePhone(raw)) {
+            results.push({
+              display: normalizePhoneWhitespace(raw),
+              digits: onlyDigits,
+              index: start,
+              formatted: sawSep || raw.charAt(0) === "+"
+            });
+          }
+          i = Math.max(end, start + 1);
+        }
+        return results;
+      }
+
+      function lineIsOnlyPhone(line) {
+        var t = normalizePhoneWhitespace(line);
+        if (!t) return false;
+        if (phoneDigitCount(t) < 7 || phoneDigitCount(t) > 15) return false;
+        return t.replace(/[\d\s().+\-]/g, "").length === 0 && !isDateLikePhone(t);
+      }
+
+      function hasIdContext(text, index) {
+        var before = text.slice(Math.max(0, index - 12), index);
+        return /訂單|編號|單號|序號|客編|No\.?|#|ID/i.test(before);
+      }
+
+      function pickPhoneCandidate(list, allowBare) {
+        var pool = [];
+        var i;
+        for (i = 0; i < list.length; i++) {
+          if (allowBare || list[i].formatted) pool.push(list[i]);
+        }
+        if (!pool.length) return null;
+        pool.sort(function(a, b) {
+          var ap = a.display.charAt(0) === "+" ? 0 : 1;
+          var bp = b.display.charAt(0) === "+" ? 0 : 1;
+          if (ap !== bp) return ap - bp;
+          return a.index - b.index;
+        });
+        return pool[0];
+      }
+
+      function lineHasPhoneLabel(line) {
+        if (/(?:行動電話|聯絡電話|電話|手機)\s*[:：]/.test(line)) return true;
+        if (/^\s*(?:行動電話|聯絡電話|電話|手機)\s*$/.test(line)) return true;
+        if (/(?:^|\s)(?:Telephone|Phone|Mobile|Cell|Tel)\.?\s*[:：]/i.test(line)) return true;
+        if (/^\s*(?:Telephone|Phone|Mobile|Cell|Tel)\.?\s*$/i.test(line)) return true;
+        return false;
+      }
+
+      function candidatesWithoutIds(list, src, allowBare) {
+        var kept = [];
+        var i;
+        for (i = 0; i < list.length; i++) {
+          if (!list[i].formatted && hasIdContext(src, list[i].index)) continue;
+          if (!list[i].formatted && !allowBare && list[i].digits.length < 8) continue;
+          kept.push(list[i]);
+        }
+        return kept;
+      }
+
+      function extractLabeledPhone(text) {
+        var lines = String(text).split(/\r?\n/);
+        var i;
+        for (i = 0; i < lines.length; i++) {
+          if (!lineHasPhoneLabel(lines[i])) continue;
+          var src = stripPhoneNoise(lines[i]);
+          var onLine = pickPhoneCandidate(candidatesWithoutIds(findPhoneCandidates(src), src, true), true);
+          if (onLine) return onLine;
+          if (i + 1 < lines.length && lineIsOnlyPhone(lines[i + 1])) {
+            var nextSrc = stripPhoneNoise(lines[i + 1]);
+            var onNext = pickPhoneCandidate(findPhoneCandidates(nextSrc), true);
+            if (onNext) return onNext;
+          }
+        }
+        return null;
+      }
+
+      function preferTaiwanDigits(info) {
+        if (info && /^09\d{8}$/.test(info.digits)) return { display: info.digits, digits: info.digits };
+        return info;
+      }
+
+      function extractAnyPhone(text) {
+        var src = stripPhoneNoise(text);
+        var candidates = candidatesWithoutIds(findPhoneCandidates(src), src, false);
+        var formatted = [];
+        var bare = [];
+        var i;
+        for (i = 0; i < candidates.length; i++) {
+          if (candidates[i].formatted) formatted.push(candidates[i]);
+          else bare.push(candidates[i]);
+        }
+        var pool = formatted.length ? formatted : bare;
+        if (!pool.length) {
+          var lines = String(text).split(/\r?\n/);
+          for (i = 0; i < lines.length; i++) {
+            if (!lineIsOnlyPhone(lines[i])) continue;
+            var lineSrc = stripPhoneNoise(lines[i]);
+            var lineHits = findPhoneCandidates(lineSrc);
+            if (lineHits.length) { pool = [lineHits[0]]; break; }
+          }
+        }
+        return pickPhoneCandidate(pool, true);
+      }
+
+      function extractPhone(desc) {
+        var text = normalizePhoneText(desc || "");
+        if (!text) return { display: "", digits: "" };
+
+        var tw = text.match(/(?:^|\D)(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})(?!\d)/);
+        if (tw) {
+          var twDigits = tw[1].replace(/\D/g, "");
+          if (twDigits.length === 10) return { display: twDigits, digits: twDigits };
+        }
+
+        var labeled = preferTaiwanDigits(extractLabeledPhone(text));
+        if (labeled) return { display: labeled.display, digits: labeled.digits };
+
+        var any = preferTaiwanDigits(extractAnyPhone(text));
+        if (any) return { display: any.display, digits: any.digits };
+        return { display: "", digits: "" };
+      }
+
+      const TAIPEI_TZ = 'Asia/Taipei';
+      const WEEKDAY_ZH = {
+        Sunday: '星期日', Monday: '星期一', Tuesday: '星期二', Wednesday: '星期三',
+        Thursday: '星期四', Friday: '星期五', Saturday: '星期六'
+      };
+      const pad2 = (n) => String(n).padStart(2, '0');
+
+      const getTaipeiParts = (input) => {
+        const d = input instanceof Date ? input : new Date(input);
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: TAIPEI_TZ,
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          weekday: 'long',
+          hour: 'numeric',
+          minute: 'numeric',
+          hourCycle: 'h23'
+        });
+        const parts = formatter.formatToParts(d);
+        const p = {};
+        parts.forEach(part => { p[part.type] = part.value; });
+        let hour = parseInt(p.hour, 10);
+        if (hour === 24) hour = 0;
+        return {
+          year: parseInt(p.year, 10),
+          month: parseInt(p.month, 10),
+          day: parseInt(p.day, 10),
+          hour,
+          minute: parseInt(p.minute, 10),
+          weekday: WEEKDAY_ZH[p.weekday] || '星期日'
+        };
+      };
+
+      const taipeiWallToDate = (dateStr, timeStr) => {
+        const hm = String(timeStr || '00:00').split(':');
+        const hh = pad2(parseInt(hm[0], 10));
+        const mm = pad2(parseInt(hm[1], 10));
+        return new Date(`${dateStr}T${hh}:${mm}:00+08:00`);
+      };
+
+
       const isEventConfirmed = (title) => {
         if (!title) return false;
         const clean = title.trim();
@@ -496,10 +1018,7 @@ function respondJSON(obj) {
         }
 
         let phone = evt.phone || '';
-        if (!phone) {
-          const phoneMatch = desc.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
-          if (phoneMatch) phone = phoneMatch[1].replace(/\s+/g, '');
-        }
+        if (!phone) phone = extractPhone(desc).display;
 
         let email = evt.email || '';
         if (!email) {
@@ -554,17 +1073,9 @@ function respondJSON(obj) {
       };
 
       const formatTimeTag = (startIso, endIso) => {
-        const start = new Date(startIso);
-        const end = new Date(endIso);
-        const m = start.getMonth() + 1;
-        const d = start.getDate();
-        const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        const weekStr = weekDays[start.getDay()];
-        const sHour = String(start.getHours()).padStart(2, '0');
-        const sMin = String(start.getMinutes()).padStart(2, '0');
-        const eHour = String(end.getHours()).padStart(2, '0');
-        const eMin = String(end.getMinutes()).padStart(2, '0');
-        return `${m}月${d}日 ( ${weekStr} ) ${sHour}:${sMin} - ${eHour}:${eMin}`;
+        const start = getTaipeiParts(startIso);
+        const end = getTaipeiParts(endIso);
+        return `${start.month}月${start.day}日 ( ${start.weekday} ) ${pad2(start.hour)}:${pad2(start.minute)} - ${pad2(end.hour)}:${pad2(end.minute)}`;
       };
 
       let toastTimer = null;
@@ -600,8 +1111,7 @@ function respondJSON(obj) {
           list.forEach(evt => {
             const startKey = evt.start || '';
             const descTest = toHalfWidthNum(evt.description || '');
-            const phoneMatch = descTest.match(/(09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8})/);
-            const phoneKey = phoneMatch ? phoneMatch[1].replace(/\D/g, '') : '';
+            const phoneKey = extractPhone(descTest).digits || String(evt.phone || '').replace(/\D/g, '');
             const nameMatch = (evt.title || '').match(/\(([^)]+)\)/);
             const nameKey = nameMatch ? nameMatch[1].replace('#', '').trim() : '';
             const dedupKey = `${startKey}_${phoneKey || nameKey || evt.title}`;
@@ -875,10 +1385,8 @@ function respondJSON(obj) {
         if (!evt) return;
         const info = parseEventInfo(evt);
 
-        const startDate = new Date(evt.start);
-        const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        const weekStr = weekDays[startDate.getDay()];
-        const bookingTime = `${startDate.getMonth() + 1}/${startDate.getDate()} (${weekStr}) ${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+        const startDate = getTaipeiParts(evt.start);
+        const bookingTime = `${startDate.month}/${startDate.day} (${startDate.weekday}) ${pad2(startDate.hour)}:${pad2(startDate.minute)}`;
 
         let rawName = info.customerName || '貴賓';
         let maskedName = rawName.length > 1 ? rawName.charAt(0) + '*'.repeat(rawName.length - 1) : rawName + '*';
@@ -925,12 +1433,12 @@ ${maskedPhone}
         if (!evt) return;
 
         state.activeEditEventId = id;
-        const start = new Date(evt.start);
-        const end = new Date(evt.end);
+        const start = getTaipeiParts(evt.start);
+        const end = getTaipeiParts(evt.end);
 
-        document.getElementById('editEventDate').value = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
-        document.getElementById('editEventStartTime').value = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
-        document.getElementById('editEventEndTime').value = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('editEventDate').value = `${start.year}-${pad2(start.month)}-${pad2(start.day)}`;
+        document.getElementById('editEventStartTime').value = `${pad2(start.hour)}:${pad2(start.minute)}`;
+        document.getElementById('editEventEndTime').value = `${pad2(end.hour)}:${pad2(end.minute)}`;
         document.getElementById('editEventNote').value = '';
         document.getElementById('editTimeModal').classList.remove('hidden');
       };
@@ -956,25 +1464,26 @@ ${maskedPhone}
         const endInput = document.getElementById('editEventEndTime');
         if (!dateInput.value || !startInput.value) return;
 
-        const currentStart = new Date(`${dateInput.value}T${startInput.value}:00`);
-        let currentEnd = endInput.value ? new Date(`${dateInput.value}T${endInput.value}:00`) : new Date(currentStart.getTime() + 10 * 60000);
+        const currentStart = taipeiWallToDate(dateInput.value, startInput.value);
+        const currentEnd = endInput.value ? taipeiWallToDate(dateInput.value, endInput.value) : new Date(currentStart.getTime() + 10 * 60000);
 
         const durationMs = Math.max(10 * 60000, currentEnd.getTime() - currentStart.getTime());
         const shiftedStart = new Date(currentStart.getTime() + deltaMinutes * 60000);
         const shiftedEnd = new Date(shiftedStart.getTime() + durationMs);
 
-        dateInput.value = `${shiftedStart.getFullYear()}-${String(shiftedStart.getMonth() + 1).padStart(2, '0')}-${String(shiftedStart.getDate()).padStart(2, '0')}`;
-        startInput.value = `${String(shiftedStart.getHours()).padStart(2, '0')}:${String(shiftedStart.getMinutes()).padStart(2, '0')}`;
-        endInput.value = `${String(shiftedEnd.getHours()).padStart(2, '0')}:${String(shiftedEnd.getMinutes()).padStart(2, '0')}`;
+        const sParts = getTaipeiParts(shiftedStart);
+        const eParts = getTaipeiParts(shiftedEnd);
+        dateInput.value = `${sParts.year}-${pad2(sParts.month)}-${pad2(sParts.day)}`;
+        startInput.value = `${pad2(sParts.hour)}:${pad2(sParts.minute)}`;
+        endInput.value = `${pad2(eParts.hour)}:${pad2(eParts.minute)}`;
       };
 
       window.quickShiftDays = (deltaDays) => {
         const dateInput = document.getElementById('editEventDate');
         if (!dateInput.value) return;
-        const [y, m, d] = dateInput.value.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        dt.setDate(dt.getDate() + deltaDays);
-        dateInput.value = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        const shifted = new Date(taipeiWallToDate(dateInput.value, '12:00').getTime() + deltaDays * 24 * 60 * 60 * 1000);
+        const p = getTaipeiParts(shifted);
+        dateInput.value = `${p.year}-${pad2(p.month)}-${pad2(p.day)}`;
       };
 
       window.switchTab = (tab) => {
@@ -1071,8 +1580,8 @@ ${maskedPhone}
             return;
           }
 
-          const newStart = new Date(`${dateVal}T${startVal}:00`);
-          const newEnd = new Date(`${dateVal}T${endVal}:00`);
+          const newStart = taipeiWallToDate(dateVal, startVal);
+          const newEnd = taipeiWallToDate(dateVal, endVal);
           if (newEnd <= newStart) {
             showToast('結束時間必須晚於開始時間', true);
             return;
