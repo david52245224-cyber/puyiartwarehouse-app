@@ -1,12 +1,419 @@
-<!-- ... existing code ... -->
-    <!-- 頁尾 -->
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-      樸藝小倉庫預約管理 © 2026 • 專屬日曆即時同步
-    </footer>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>樸藝小倉庫預約管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- 更改時間彈窗 -->
-<!-- ... existing code ... -->
-    // 渲染清單
+  <!-- 頂部導航列 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="bg-emerald-600 text-white p-2.5 rounded-xl shadow-md">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900 tracking-tight">樸藝小倉庫預約管理</h1>
+          <p class="text-xs text-slate-500">台灣時區 (GMT+8) • 專屬日曆「樸藝實體店預約」智慧同步</p>
+        </div>
+      </div>
+
+      <div class="flex items-center flex-wrap gap-2">
+        <button onclick="fetchCalendarEvents()" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl shadow-sm transition active:scale-95">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          讀取日曆
+        </button>
+        <button onclick="openSettingsModal()" class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          連線設定
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容區 -->
+  <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+    
+    <!-- 搜尋與統計列 -->
+    <div class="mb-6 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="relative flex-grow max-w-md">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </span>
+        <input type="text" id="searchInput" oninput="handleSearchInput(event)" placeholder="搜尋姓名、電話、Email..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+      </div>
+      <div class="flex items-center space-x-3 text-sm">
+        <span class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-medium" id="badgePending">待確認: 0</span>
+        <span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-medium" id="badgeConfirmed">已確認: 0</span>
+      </div>
+    </div>
+
+    <!-- 分頁標籤 -->
+    <div class="flex border-b border-slate-200 mb-6">
+      <button onclick="switchTab('pending')" id="tabBtnPending" class="pb-3 px-6 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 transition">
+        待確認預約
+      </button>
+      <button onclick="switchTab('confirmed')" id="tabBtnConfirmed" class="pb-3 px-6 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition">
+        已確認預約
+      </button>
+    </div>
+
+    <!-- 預約清單容器 -->
+    <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 動態載入卡片 -->
+    </div>
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
+    樸藝小倉庫預約管理 © 2026 • 專屬日曆即時同步
+  </footer>
+
+  <!-- 更改時間彈窗 -->
+  <div id="editTimeModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-fade-in border border-slate-100">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="font-bold text-slate-800">更改預約日期或時間</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">快速微調按鈕</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="shiftTimeMinutes(-30)" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded-xl border border-amber-200 transition">⏪ 提前 30 分</button>
+            <button onclick="shiftTimeMinutes(30)" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium rounded-xl border border-emerald-200 transition">⏩ 延後 30 分</button>
+            <button onclick="shiftDateDays(-1)" class="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-xl border border-slate-200 transition">📅 提前 1 天</button>
+            <button onclick="shiftDateDays(1)" class="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-xl border border-slate-200 transition">📅 順延 1 天</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">預約日期</label>
+          <input type="date" id="editEventDate" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">開始時間</label>
+            <input type="time" id="editEventStartTime" onchange="autoSyncEndTime()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">結束時間</label>
+            <input type="time" id="editEventEndTime" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">備註/調整原因 (選填)</label>
+          <input type="text" id="editEventNote" placeholder="例如：客人電話改期" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+        <button onclick="closeEditModal()" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-xl transition">取消</button>
+        <button onclick="submitEditTime()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl shadow-sm transition">確認修改並同步</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 取消預約確認彈窗 -->
+  <div id="deleteModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden animate-fade-in border border-slate-100 p-6 text-center">
+      <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <h3 class="font-bold text-slate-900 text-lg mb-2">確定要取消此預約嗎？</h3>
+      <p class="text-xs text-slate-500 mb-6" id="deleteModalEventTitle">將從 Google 日曆中永久刪除此行程，無法復原。</p>
+      <div class="flex space-x-3">
+        <button onclick="closeDeleteModal()" class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-xl transition">保留預約</button>
+        <button onclick="confirmDeleteEvent()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-xl shadow-sm transition">確定取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 連線設定彈窗 -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden animate-fade-in border border-slate-100 max-h-[90vh] flex flex-col">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="font-bold text-slate-800">Google Apps Script 後台連線設定</h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto flex-grow">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">網頁應用程式網址 (GAS Web App URL)</label>
+          <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+        </div>
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-800 space-y-2">
+          <p class="font-semibold">💡 專屬日曆設定說明：</p>
+          <p>後台已強制設定為**專屬掃描「樸藝實體店預約」日曆**，確保讀取速度最快。請確認您的 Google 日曆中有建立此名稱之日曆。</p>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">後台 Apps Script 完整代碼 (Code.gs)</label>
+            <button onclick="copyGasCode()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">複製後台代碼</button>
+          </div>
+          <textarea id="gasCodeTextarea" readonly rows="8" class="w-full p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl focus:outline-none select-all">
+function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
+
+function handleRequest(e) {
+  var params = (e && e.parameter) ? e.parameter : {};
+  if (e && e.postData && e.postData.contents) {
+    try {
+      var bodyParams = JSON.parse(e.postData.contents);
+      for (var k in bodyParams) { params[k] = bodyParams[k]; }
+    } catch(err) {}
+  }
+  
+  var action = params.action || "fetch";
+  var callback = params.callback || "";
+  
+  try {
+    var result = { status: "success" };
+    var targetCal = null;
+    var calendars = CalendarApp.getAllCalendars();
+    for (var i = 0; i < calendars.length; i++) {
+      if (calendars[i].getName() === "樸藝實體店預約") {
+        targetCal = calendars[i];
+        break;
+      }
+    }
+    if (!targetCal) {
+      targetCal = CalendarApp.getDefaultCalendar();
+    }
+    
+    if (action === "fetch") {
+      var now = new Date();
+      var futureEnd = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+      var pastStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      var events = targetCal.getEvents(pastStart, futureEnd);
+      var list = [];
+      
+      for (var evIdx = 0; evIdx < events.length; evIdx++) {
+        var ev = events[evIdx];
+        try {
+          list.push({
+            id: ev.getId(),
+            title: ev.getTitle() || "",
+            start: ev.getStartTime().toISOString(),
+            end: ev.getEndTime().toISOString(),
+            description: ev.getDescription() || ""
+          });
+        } catch(ex) {}
+      }
+      result.data = list;
+    } 
+    else if (action === "toggleV" || action === "editTime" || action === "deleteEvent") {
+      var eventId = params.eventId;
+      var ev = targetCal.getEventById(eventId);
+      if (ev) {
+        if (action === "toggleV") {
+          var newTitle = params.newTitle;
+          if (newTitle) {
+            ev.setTitle(newTitle);
+          }
+        } else if (action === "editTime") {
+          var newStart = new Date(params.start);
+          var newEnd = new Date(params.end);
+          ev.setTime(newStart, newEnd);
+          if (params.note) {
+            var desc = ev.getDescription() || "";
+            ev.setDescription(desc + "\n[管理員修改記錄: " + params.note + "]");
+          }
+        } else if (action === "deleteEvent") {
+          ev.deleteEvent();
+        }
+        result.message = "success";
+      } else {
+        result.status = "error";
+        result.message = "找不到指定行程";
+      }
+    }
+    
+    var outputText = JSON.stringify(result);
+    if (callback) {
+      return ContentService.createTextOutput(callback + "(" + outputText + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(outputText).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    var errOutput = JSON.stringify({ status: "error", message: err.toString() });
+    if (callback) {
+      return ContentService.createTextOutput(callback + "(" + errOutput + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(errOutput).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+          </textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-xl transition">關閉</button>
+        <button onclick="saveSettings()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl shadow-sm transition">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右下角 Toast 提示 -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toastContent" class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm flex items-center space-x-2">
+      <span id="toastIcon">🟢</span>
+      <span id="toastMessage">已完成同步</span>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbx9cpR0BTZQIv9Jn_FK_UMzY9bUS9522mMnUw7mpdrQ0CCplxTN934mUybBWCW27licuQ/exec";
+    
+    const INITIAL_FALLBACK_EVENTS = [
+      {
+        id: "mock_1",
+        title: "樸藝小倉庫預約 (#曾彥蒼)5",
+        start: "2026-10-02T18:40:00.000Z",
+        end: "2026-10-02T19:40:00.000Z",
+        description: "Email: jayson30678@gmail.com\n電話: 0912345666"
+      }
+    ];
+
+    const state = {
+      gasUrl: localStorage.getItem('puyi_gas_url') || DEFAULT_GAS_URL,
+      events: JSON.parse(localStorage.getItem('puyi_cached_events') || JSON.stringify(INITIAL_FALLBACK_EVENTS)),
+      activeTab: 'pending',
+      searchQuery: '',
+      activeEditEventId: null,
+      activeDeleteEventId: null,
+      actionLockMap: {}
+    };
+
+    const getTaiwanDateParts = (isoString) => {
+      const d = new Date(isoString);
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Taipei',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(d);
+      const p = {};
+      parts.forEach(part => { p[part.type] = part.value; });
+      return {
+        year: parseInt(p.year, 10),
+        month: parseInt(p.month, 10),
+        day: parseInt(p.day, 10),
+        hour: parseInt(p.hour, 10) === 24 ? 0 : parseInt(p.hour, 10),
+        minute: parseInt(p.minute, 10)
+      };
+    };
+
+    let toastTimer = null;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toastMessage');
+      const iconEl = document.getElementById('toastIcon');
+      
+      msgEl.textContent = msg;
+      iconEl.textContent = type === 'success' ? '🟢' : '⚠️';
+      
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    async function fetchCalendarEvents() {
+      showToast("正在同步至 Google 日曆...", "success");
+      try {
+        const url = `${state.gasUrl}?action=fetch&_=${Date.now()}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.status === "success" && Array.isArray(json.data)) {
+          state.events = json.data;
+          localStorage.setItem('puyi_cached_events', JSON.stringify(state.events));
+          renderEvents();
+          showToast(`已成功同步 ${state.events.length} 筆預約行程`, "success");
+        } else {
+          throw new Error(json.message || "未知錯誤");
+        }
+      } catch (err) {
+        console.warn("Fetch failed, using cache:", err);
+        renderEvents();
+        showToast("已從本地快取載入資料", "success");
+      }
+    }
+
+    function parseEventInfo(evt) {
+      const title = evt.title || "";
+      const desc = evt.description || "";
+      
+      const isConfirmed = title.trim().startsWith("V");
+      const cleanTitle = title.replace(/^V/, "").trim();
+
+      let customerName = "";
+      let isRepeatCustomer = false;
+      const nameMatch = cleanTitle.match(/\(([^)]+)\)/);
+      if (nameMatch) {
+        customerName = nameMatch[1].replace(/^#/, "").trim();
+        isRepeatCustomer = true;
+      } else {
+        const parts = cleanTitle.split("預約");
+        customerName = parts[parts.length - 1].replace(/\d+$/, "").trim() || "貴賓";
+      }
+
+      let peopleCount = 1;
+      const countMatch = cleanTitle.match(/(\d+)$/);
+      if (countMatch) {
+        peopleCount = parseInt(countMatch[1], 10);
+      } else {
+        const descCount = desc.match(/人數[:：]?\s*(\d+)/);
+        if (descCount) peopleCount = parseInt(descCount[1], 10);
+      }
+
+      let phone = "";
+      const phoneMatch = desc.match(/(\+?852[\s-]?\d{4}[\s-]?\d{4}|\+?852\d{8}|09\d{2}[-\s]?\d{3}[-\s]?\d{3}|09\d{8}|\+\d{1,3}[\s-]?\d{6,12})/);
+      if (phoneMatch) {
+        phone = phoneMatch[1].replace(/\s+/g, '');
+      }
+
+      let email = "";
+      const emailMatch = desc.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        email = emailMatch[1];
+      }
+
+      return { isConfirmed, cleanTitle, customerName, isRepeatCustomer, peopleCount, phone, email };
+    }
+
+    function formatTimeTag(startIso, endIso) {
+      const start = getTaiwanDateParts(startIso);
+      const end = getTaiwanDateParts(endIso);
+      const d = new Date(startIso);
+      const taiwanDateStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'long' }).format(d);
+      const weekMap = { 'Sunday': '星期日', 'Monday': '星期一', 'Tuesday': '星期二', 'Wednesday': '星期三', 'Thursday': '星期四', 'Friday': '星期五', 'Saturday': '星期六' };
+      const weekStr = weekMap[taiwanDateStr] || '星期日';
+
+      const sHour = String(start.hour).padStart(2, '0');
+      const sMin = String(start.minute).padStart(2, '0');
+      const eHour = String(end.hour).padStart(2, '0');
+      const eMin = String(end.minute).padStart(2, '0');
+      return `${start.month}月${start.day}日 ( ${weekStr} ) ${sHour}:${sMin} - ${eHour}:${eMin}`;
+    }
+
     function renderEvents() {
       const container = document.getElementById('eventsContainer');
       const query = state.searchQuery.toLowerCase();
@@ -14,12 +421,10 @@
       let pendingCount = 0;
       let confirmedCount = 0;
 
-      // 取得台灣時間的今天日期字串 (YYYY-MM-DD)
       const nowParts = getTaiwanDateParts(new Date().toISOString());
       const todayStr = `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}-${String(nowParts.day).padStart(2, '0')}`;
 
       const filtered = state.events.filter(evt => {
-        // 過濾掉今天以前的行程（結束日期小於今天則不顯示，只保留今天與未來）
         const endParts = getTaiwanDateParts(evt.end);
         const endStr = `${endParts.year}-${String(endParts.month).padStart(2, '0')}-${String(endParts.day).padStart(2, '0')}`;
         if (endStr < todayStr) return false;
@@ -27,4 +432,360 @@
         const info = parseEventInfo(evt);
         if (info.isConfirmed) confirmedCount++;
         else pendingCount++;
-<!-- ... existing code ... -->
+
+        if (state.activeTab === 'pending' && info.isConfirmed) return false;
+        if (state.activeTab === 'confirmed' && !info.isConfirmed) return false;
+
+        if (!query) return true;
+        return (evt.title && evt.title.toLowerCase().includes(query)) ||
+               (evt.description && evt.description.toLowerCase().includes(query)) ||
+               info.customerName.toLowerCase().includes(query) ||
+               info.phone.includes(query) ||
+               info.email.toLowerCase().includes(query);
+      });
+
+      document.getElementById('badgePending').textContent = `待確認: ${pendingCount}`;
+      document.getElementById('badgeConfirmed').textContent = `已確認: ${confirmedCount}`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-slate-200">
+            <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <p class="text-sm font-medium text-slate-500">目前沒有符合的預約行程</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(evt => {
+        const info = parseEventInfo(evt);
+        const timeStr = formatTimeTag(evt.start, evt.end);
+        const maskedPhone = info.phone ? info.phone.replace(/(\d{4})\d{4}(\d{4})/, '$1****$2') : "無留電話";
+        const isLocked = state.actionLockMap[evt.id];
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-3">
+                <span class="px-2.5 py-1 text-xs font-semibold rounded-lg ${info.isConfirmed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                  ${info.isConfirmed ? '已確認' : '待確認'}
+                </span>
+                ${info.isRepeatCustomer ? '<span class="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-lg border border-purple-200">⭐ 老客人</span>' : ''}
+              </div>
+
+              <div class="mb-4">
+                <h3 class="font-bold text-slate-900 text-base mb-1 flex items-center justify-between">
+                  <span>${info.customerName}</span>
+                  <span class="text-xs font-normal px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">👥 ${info.peopleCount}人</span>
+                </h3>
+                <p class="text-xs font-medium text-emerald-600 mb-2">📅 ${timeStr}</p>
+                <div class="text-xs text-slate-500 space-y-1 bg-slate-50 p-3 rounded-xl">
+                  <p>📧 ${info.email || '無留 Email'}</p>
+                  <p>📞 ${maskedPhone}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center space-x-2">
+                ${!info.isConfirmed ? `
+                  <button onclick="oneClickConfirm('${evt.id}')" ${isLocked ? 'disabled' : ''} class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-sm transition active:scale-95 disabled:opacity-50">
+                    ✨ 一鍵打V並複製訊息
+                  </button>
+                ` : `
+                  <button onclick="copyConfirmationMsg('${evt.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition">
+                    📋 複製訊息
+                  </button>
+                  <button onclick="toggleV('${evt.id}', false)" ${isLocked ? 'disabled' : ''} class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded-xl transition disabled:opacity-50">
+                    取消 V
+                  </button>
+                `}
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <button onclick="openEditModal('${evt.id}')" title="改時間" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button onclick="openDeleteModal('${evt.id}')" title="取消預約" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copyConfirmationMsg(id) {
+      const evt = state.events.find(e => e.id === id);
+      if (!evt) return;
+      const info = parseEventInfo(evt);
+
+      const taiwanStart = getTaiwanDateParts(evt.start);
+      const startDate = new Date(evt.start);
+      const taiwanDateStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'long' }).format(startDate);
+      const weekMap = { 'Sunday': '星期日', 'Monday': '星期一', 'Tuesday': '星期二', 'Wednesday': '星期三', 'Thursday': '星期四', 'Friday': '星期五', 'Saturday': '星期六' };
+      const weekStr = weekMap[taiwanDateStr] || '星期日';
+      
+      const sHour = String(taiwanStart.hour).padStart(2, '0');
+      const sMin = String(taiwanStart.minute).padStart(2, '0');
+      const bookingTime = `${taiwanStart.month}/${taiwanStart.day} (${weekStr}) ${sHour}:${sMin}`;
+
+      let rawName = info.customerName || '貴賓';
+      const maskedName = rawName.length > 1 ? rawName[0] + '**' : rawName + '*';
+      let rawEmail = info.email || '未留Email';
+      let rawPhone = info.phone ? info.phone.slice(-4) : '0000';
+      const maskedPhone = '******' + rawPhone;
+
+      const text = `您好👋🏽
+預約資訊如下
+預約確認 ${bookingTime}
+${maskedName}
+${rawEmail}
+${maskedPhone}
+
+———————————————
+📍 倉庫地址 
+🏠 高雄市楠梓區宏毅三路四巷34號（白色鐵皮屋）
+📍 https://reurl.cc/M37Z6v（精準定位）
+🅿️ 旁邊有公園超好停車（請勿停鄰居出入口）
+———————————————
+💰 付款：現金、匯款、刷卡、LinePay、Apple Pay
+🧾 發票：提供載具／統編
+📦 建議自備購物袋（現場皆會防撞包裝，亦備有紙箱）
+🚚 滿 $3,000 可以寄送（約1週，特價出清品除外）
+———————————————
+⚠️ 維護空間品質，一組為單位低消 $500
+❤️ VIP（累積滿 $5,000）無低消
+🙏 若需取消請提前 2 小時告知
+
+期待您前來挑選器皿`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("已成功複製確認訊息！", "success");
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast("已成功複製確認訊息！", "success");
+      } catch (err) {
+        showToast("複製失敗，請手動複製", "error");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    async function oneClickConfirm(id) {
+      copyConfirmationMsg(id);
+      await toggleV(id, true);
+    }
+
+    async function toggleV(id, makeConfirmed) {
+      const evt = state.events.find(e => e.id === id);
+      if (!evt) return;
+
+      state.actionLockMap[id] = true;
+      renderEvents();
+
+      const titleWithoutV = evt.title.replace(/^V/, "").trim();
+      const newTitle = makeConfirmed ? "V" + titleWithoutV : titleWithoutV;
+
+      evt.title = newTitle;
+      renderEvents();
+
+      try {
+        const url = `${state.gasUrl}?action=toggleV&eventId=${encodeURIComponent(id)}&newTitle=${encodeURIComponent(newTitle)}&_=${Date.now()}`;
+        await fetch(url, { mode: 'no-cors' });
+        showToast(makeConfirmed ? "已成功打 V 並移至已確認" : "已取消 V", "success");
+      } catch (err) {
+        showToast("同步至日曆失敗，請檢查連線", "error");
+      } finally {
+        setTimeout(() => {
+          state.actionLockMap[id] = false;
+          renderEvents();
+        }, 1000);
+      }
+    }
+
+    function openEditModal(id) {
+      const evt = state.events.find(e => e.id === id);
+      if (!evt) return;
+
+      state.activeEditEventId = id;
+      const start = getTaiwanDateParts(evt.start);
+      const end = getTaiwanDateParts(evt.end);
+
+      document.getElementById('editEventDate').value = `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}`;
+      document.getElementById('editEventStartTime').value = `${String(start.hour).padStart(2, '0')}:${String(start.minute).padStart(2, '0')}`;
+      document.getElementById('editEventEndTime').value = `${String(end.hour).padStart(2, '0')}:${String(end.minute).padStart(2, '0')}`;
+      document.getElementById('editEventNote').value = '';
+      document.getElementById('editTimeModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editTimeModal').classList.add('hidden');
+      state.activeEditEventId = null;
+    }
+
+    function autoSyncEndTime() {
+      const startVal = document.getElementById('editEventStartTime').value;
+      if (!startVal) return;
+      const [hh, mm] = startVal.split(':').map(Number);
+      let totalMin = hh * 60 + mm + 10;
+      const endH = Math.floor(totalMin / 60) % 24;
+      const endM = totalMin % 60;
+      document.getElementById('editEventEndTime').value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    }
+
+    function shiftTimeMinutes(minOffset) {
+      const sInput = document.getElementById('editEventStartTime').value;
+      const eInput = document.getElementById('editEventEndTime').value;
+      if (!sInput || !eInput) return;
+
+      const [sh, sm] = sInput.split(':').map(Number);
+      const [eh, em] = eInput.split(':').map(Number);
+
+      let sTotal = (sh * 60 + sm + minOffset + 1440) % 1440;
+      let eTotal = (eh * 60 + em + minOffset + 1440) % 1440;
+
+      document.getElementById('editEventStartTime').value = `${String(Math.floor(sTotal/60)).padStart(2, '0')}:${String(sTotal%60).padStart(2, '0')}`;
+      document.getElementById('editEventEndTime').value = `${String(Math.floor(eTotal/60)).padStart(2, '0')}:${String(eTotal%60).padStart(2, '0')}`;
+    }
+
+    function shiftDateDays(dayOffset) {
+      const dInput = document.getElementById('editEventDate').value;
+      if (!dInput) return;
+      const d = new Date(dInput);
+      d.setDate(d.getDate() + dayOffset);
+      document.getElementById('editEventDate').value = d.toISOString().split('T')[0];
+    }
+
+    async function submitEditTime() {
+      const id = state.activeEditEventId;
+      const evt = state.events.find(e => e.id === id);
+      if (!evt) return;
+
+      const dateStr = document.getElementById('editEventDate').value;
+      const startT = document.getElementById('editEventStartTime').value;
+      const endT = document.getElementById('editEventEndTime').value;
+      const note = document.getElementById('editEventNote').value;
+
+      if (!dateStr || !startT || !endT) {
+        showToast("請完整填寫日期與時間", "error");
+        return;
+      }
+
+      const newStartIso = new Date(`${dateStr}T${startT}:00+08:00`).toISOString();
+      const newEndIso = new Date(`${dateStr}T${endT}:00+08:00`).toISOString();
+
+      evt.start = newStartIso;
+      evt.end = newEndIso;
+      renderEvents();
+      closeEditModal();
+      showToast("時間已更新", "success");
+
+      try {
+        const url = `${state.gasUrl}?action=editTime&eventId=${encodeURIComponent(id)}&start=${encodeURIComponent(newStartIso)}&end=${encodeURIComponent(newEndIso)}&note=${encodeURIComponent(note)}&_=${Date.now()}`;
+        await fetch(url, { mode: 'no-cors' });
+      } catch (err) {
+        showToast("背景同步失敗", "error");
+      }
+    }
+
+    function openDeleteModal(id) {
+      state.activeDeleteEventId = id;
+      const evt = state.events.find(e => e.id === id);
+      if (evt) {
+        const info = parseEventInfo(evt);
+        document.getElementById('deleteModalEventTitle').textContent = `將從 Google 日曆中永久刪除「${info.customerName}」的預約。`;
+      }
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      state.activeDeleteEventId = null;
+    }
+
+    async function confirmDeleteEvent() {
+      const id = state.activeDeleteEventId;
+      if (!id) return;
+
+      state.events = state.events.filter(e => e.id !== id);
+      renderEvents();
+      closeDeleteModal();
+      showToast("已取消並刪除預約", "success");
+
+      try {
+        const url = `${state.gasUrl}?action=deleteEvent&eventId=${encodeURIComponent(id)}&_=${Date.now()}`;
+        await fetch(url, { mode: 'no-cors' });
+      } catch (err) {
+        showToast("日曆刪除同步失敗", "error");
+      }
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      const btnP = document.getElementById('tabBtnPending');
+      const btnC = document.getElementById('tabBtnConfirmed');
+
+      if (tab === 'pending') {
+        btnP.className = "pb-3 px-6 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 transition";
+        btnC.className = "pb-3 px-6 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition";
+      } else {
+        btnC.className = "pb-3 px-6 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 transition";
+        btnP.className = "pb-3 px-6 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition";
+      }
+      renderEvents();
+    }
+
+    function handleSearchInput(e) {
+      state.searchQuery = e.target.value;
+      renderEvents();
+    }
+
+    function openSettingsModal() {
+      document.getElementById('gasUrlInput').value = state.gasUrl;
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      if (url) {
+        state.gasUrl = url;
+        localStorage.setItem('puyi_gas_url', url);
+        showToast("設定已儲存", "success");
+        closeSettingsModal();
+        fetchCalendarEvents();
+      } else {
+        showToast("請輸入有效的網址", "error");
+      }
+    }
+
+    function copyGasCode() {
+      const textarea = document.getElementById('gasCodeTextarea');
+      textarea.select();
+      document.execCommand('copy');
+      showToast("後台代碼已複製！", "success");
+    }
+
+    window.onload = function() {
+      renderEvents();
+      fetchCalendarEvents();
+    };
+  </script>
+</body>
+</html>
