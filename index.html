@@ -1026,7 +1026,14 @@ function respondJSON(obj) {
           if (emailMatch) email = emailMatch[1];
         }
 
-        let people = evt.people !== undefined ? evt.people : null;
+        // 標題結尾的數字（例如「(王小明)5」）就是日曆上的人數，優先採用，改人數後重整才不會跳回去
+        let people = null;
+        const titlePeopleMatch = title.match(/\)\s*([0-9]{1,2})\s*$/);
+        if (titlePeopleMatch) {
+          people = parseInt(titlePeopleMatch[1], 10);
+          evt.people = people;
+        }
+        if (!people) people = evt.people !== undefined ? evt.people : null;
         if (!people) {
           const pExactFormMatch = desc.match(/人數\s*\([^\)]*\)[^\n\r]*\n+([0-9]{1,2})/i);
           if (pExactFormMatch) {
@@ -1305,14 +1312,44 @@ function respondJSON(obj) {
         return (unsafe || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
       };
 
+      const peopleSyncTimers = {};
       window.adjustPeople = (id, delta) => {
         const evt = state.events.find(e => e.id === id);
         if (!evt) return;
-        let current = evt.people !== undefined ? evt.people : 1;
+        const info = parseEventInfo(evt);
+        let current = info.people || 1;
         current = Math.max(1, current + delta);
         evt.people = current;
+
+        // 同步改標題結尾的人數，保留原本的 V 和 # 標記
+        const nameTagPart = info.isReturning ? `#${info.customerName}` : info.customerName;
+        const newTitle = info.confirmed
+          ? `V樸藝小倉庫預約 (${nameTagPart})${current}`
+          : `樸藝小倉庫預約 (${nameTagPart})${current}`;
+        evt.title = newTitle;
+        try { localStorage.setItem('puyi_cached_events', JSON.stringify(state.events)); } catch(e){}
         renderUI();
-        showToast(`預約人數已調整為 ${current} 人`);
+        showToast(`預約人數已調整為 ${current} 人，同步到 Google 日曆中…`);
+
+        // 連按 + / - 時只在停手 0.8 秒後寫回日曆一次
+        clearTimeout(peopleSyncTimers[id]);
+        peopleSyncTimers[id] = setTimeout(async () => {
+          delete peopleSyncTimers[id];
+          try {
+            const url = state.gasUrl || DEFAULT_GAS_URL;
+            const separator = url.includes('?') ? '&' : '?';
+            const params = new URLSearchParams({
+              action: 'toggleConfirm',
+              calendarId: evt.calendarId || 'primary',
+              eventId: evt.id,
+              newTitle: evt.title
+            });
+            await fetch(`${url}${separator}${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+            showToast(`已送出到 Google 日曆：${evt.people} 人`);
+          } catch (e) {
+            showToast('人數同步到 Google 日曆失敗，請稍後再試');
+          }
+        }, 800);
       };
 
       window.toggleConfirmEvent = async (id) => {
