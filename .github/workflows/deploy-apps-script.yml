@@ -1,0 +1,40 @@
+name: 更新預約後台（網址不變）
+
+# Pushes apps-script/ to the existing Apps Script project and updates the
+# web app deployment already used by index.html. It does not create a new
+# deployment, so the /macros/s/.../exec address stays the same.
+#
+# The webpage itself is published separately by GitHub Pages from the main
+# branch (https://david52245224-cyber.github.io/puyiartwarehouse-app/).
+# A push to main updates index.html without this workflow.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-script-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出倉庫檔案
+        uses: actions/checkout@v4
+
+      - name: 準備 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 上傳後台並更新現有網址
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          GAS_DEPLOYMENT_ID: ${{ secrets.GAS_DEPLOYMENT_ID }}
+        run: bash .github/scripts/deploy-apps-script.sh
